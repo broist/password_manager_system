@@ -1,0 +1,31 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: pms-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootSecret123
+      MYSQL_DATABASE: password_manager
+      MYSQL_USER: pmsuser
+      MYSQL_PASSWORD: pmsPassword123
+    ports:
+      - "3306:3306"
+    volumes:
+      - pms-mysql-data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - pms-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootSecret123"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pms-mysql-data:
+    name: pms-mysql-data
+
+networks:
+  pms-network:
+    name: pms-network
+    driver: bridge
