@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PasswordManagerSystem.Api.Infrastructure.Data;
-
+using PasswordManagerSystem.Api.Application.Interfaces;
+using PasswordManagerSystem.Api.Infrastructure.Authentication;
 
 
 namespace PasswordManagerSystem.Api
@@ -26,6 +27,19 @@ namespace PasswordManagerSystem.Api
                 );
             });
 
+            var authenticationProvider = builder.Configuration["Authentication:Provider"];
+
+            if (authenticationProvider == "Mock")
+            {
+                builder.Services.AddScoped<IAdAuthenticationService, MockAdAuthenticationService>();
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"Unsupported authentication provider: {authenticationProvider}"
+                );
+            }
+            
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
