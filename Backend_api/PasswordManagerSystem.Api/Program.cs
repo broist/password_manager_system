@@ -1,8 +1,12 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using PasswordManagerSystem.Api.Infrastructure.Data;
+using Microsoft.IdentityModel.Tokens;
 using PasswordManagerSystem.Api.Application.Interfaces;
+using PasswordManagerSystem.Api.Application.Services;
 using PasswordManagerSystem.Api.Infrastructure.Authentication;
-
+using PasswordManagerSystem.Api.Infrastructure.Data;
+using PasswordManagerSystem.Api.Infrastructure.Security;
 
 namespace PasswordManagerSystem.Api
 {
@@ -12,10 +16,7 @@ namespace PasswordManagerSystem.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
@@ -39,13 +40,48 @@ namespace PasswordManagerSystem.Api
                     $"Unsupported authentication provider: {authenticationProvider}"
                 );
             }
-            
+
+            builder.Services.AddScoped<IRoleResolverService, RoleResolverService>();
+            builder.Services.AddScoped<IUserSyncService, UserSyncService>();
+            builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+            var jwtSecret = builder.Configuration["Jwt:Secret"];
+            var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+            var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+            if (string.IsNullOrWhiteSpace(jwtSecret))
+            {
+                throw new InvalidOperationException("JWT secret is not configured.");
+            }
+
+            builder.Services
+                .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+
+                        ValidIssuer = jwtIssuer,
+                        ValidAudience = jwtAudience,
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(jwtSecret)
+                        ),
+
+                        ClockSkew = TimeSpan.FromMinutes(1)
+                    };
+                });
+
+            builder.Services.AddAuthorization();
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -54,8 +90,8 @@ namespace PasswordManagerSystem.Api
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
-
 
             app.MapControllers();
 
