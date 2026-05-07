@@ -12,17 +12,20 @@ public class AuthController : ControllerBase
     private readonly IRoleResolverService _roleResolverService;
     private readonly IUserSyncService _userSyncService;
     private readonly IJwtTokenService _jwtTokenService;
+    private readonly IAuditService _auditService;
 
     public AuthController(
         IAdAuthenticationService adAuthenticationService,
         IRoleResolverService roleResolverService,
         IUserSyncService userSyncService,
-        IJwtTokenService jwtTokenService)
+        IJwtTokenService jwtTokenService,
+        IAuditService auditService)
     {
         _adAuthenticationService = adAuthenticationService;
         _roleResolverService = roleResolverService;
         _userSyncService = userSyncService;
         _jwtTokenService = jwtTokenService;
+        _auditService = auditService;
     }
 
     [HttpPost("login-test")]
@@ -35,6 +38,13 @@ public class AuthController : ControllerBase
 
         if (adUser is null)
         {
+            await _auditService.LogAsync(
+                action: "LOGIN_FAILED",
+                success: false,
+                adUsername: request.Username,
+                details: "Invalid username, password, or AD group membership."
+            );
+
             return Unauthorized(new
             {
                 message = "Invalid username, password, or AD group membership."
@@ -45,6 +55,13 @@ public class AuthController : ControllerBase
 
         if (resolvedRole is null)
         {
+            await _auditService.LogAsync(
+                action: "LOGIN_FAILED",
+                success: false,
+                adUsername: adUser.AdUsername,
+                details: "User has no valid application role."
+            );
+
             return Unauthorized(new
             {
                 message = "User has no valid application role."
@@ -52,7 +69,27 @@ public class AuthController : ControllerBase
         }
 
         var user = await _userSyncService.SyncUserAsync(adUser, resolvedRole);
+
+        await _auditService.LogAsync(
+            action: "ROLE_SYNCED",
+            success: true,
+            userId: user.Id,
+            adUsername: user.AdUsername,
+            targetType: "User",
+            targetId: user.Id,
+            details: $"Resolved role: {resolvedRole.Name}"
+        );
+
         var accessToken = _jwtTokenService.GenerateAccessToken(user, resolvedRole);
+
+        await _auditService.LogAsync(
+            action: "LOGIN_SUCCESS",
+            success: true,
+            userId: user.Id,
+            adUsername: user.AdUsername,
+            targetType: "User",
+            targetId: user.Id
+        );
 
         return Ok(new
         {

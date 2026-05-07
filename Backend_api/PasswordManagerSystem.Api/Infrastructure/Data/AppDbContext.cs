@@ -136,7 +136,9 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<AuditLog>(entity =>
         {
+            entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.AdUsername).HasColumnName("ad_username");
+            entity.Property(e => e.Action).HasColumnName("action");
             entity.Property(e => e.TargetType).HasColumnName("target_type");
             entity.Property(e => e.TargetId).HasColumnName("target_id");
             entity.Property(e => e.CredentialId).HasColumnName("credential_id");
@@ -144,7 +146,10 @@ public class AppDbContext : DbContext
             entity.Property(e => e.TargetUserId).HasColumnName("target_user_id");
             entity.Property(e => e.IpAddress).HasColumnName("ip_address");
             entity.Property(e => e.UserAgent).HasColumnName("user_agent");
+            entity.Property(e => e.Success).HasColumnName("success");
+            entity.Property(e => e.Details).HasColumnName("details");
             entity.Property(e => e.PreviousHash).HasColumnName("previous_hash");
+            entity.Property(e => e.Hash).HasColumnName("hash");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
 
             entity.HasOne(e => e.User)

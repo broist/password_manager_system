@@ -45,6 +45,9 @@ namespace PasswordManagerSystem.Api
             builder.Services.AddScoped<IUserSyncService, UserSyncService>();
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<IAuditService, AuditService>();
+
             var jwtSecret = builder.Configuration["Jwt:Secret"];
             var jwtIssuer = builder.Configuration["Jwt:Issuer"];
             var jwtAudience = builder.Configuration["Jwt:Audience"];
