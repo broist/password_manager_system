@@ -166,6 +166,36 @@ public class CredentialsController : ControllerBase
         _dbContext.Credentials.Add(credential);
         await _dbContext.SaveChangesAsync();
 
+        var currentRoleId = GetCurrentRoleId();
+
+        var accessRule = new CredentialAccess
+        {
+            CredentialId = credential.Id,
+            RoleId = currentRoleId,
+            UserId = null,
+            CanView = true,
+            CanWrite = true,
+            CanDelete = true,
+            ExpiresAt = null,
+            CreatedByUserId = currentUserId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _dbContext.CredentialAccesses.Add(accessRule);
+        await _dbContext.SaveChangesAsync();
+
+        await _auditService.LogAsync(
+            action: "CREDENTIAL_ACCESS_GRANTED",
+            success: true,
+            userId: currentUserId,
+            adUsername: currentAdUsername,
+            targetType: "CredentialAccess",
+            targetId: accessRule.Id,
+            credentialId: credential.Id,
+            companyId: company.Id,
+            details: $"Default access granted for role_id: {currentRoleId}, credential: {credential.Title}"
+        );
+
         await _auditService.LogAsync(
             action: "CREDENTIAL_CREATED",
             success: true,
