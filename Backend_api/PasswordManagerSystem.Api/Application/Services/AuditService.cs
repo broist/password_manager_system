@@ -49,7 +49,7 @@ public class AuditService : IAuditService
             .UserAgent
             .ToString();
 
-        var createdAt = DateTime.UtcNow;
+        var createdAt = TruncateToSecond(DateTime.UtcNow);
 
         var auditLog = new AuditLog
         {
@@ -92,12 +92,32 @@ public class AuditService : IAuditService
             log.UserAgent ?? string.Empty,
             log.Success.ToString(),
             log.Details ?? string.Empty,
-            log.CreatedAt.ToString("O")
+            FormatDateTime(log.CreatedAt)
         );
 
         var bytes = Encoding.UTF8.GetBytes(rawData);
         var hashBytes = SHA256.HashData(bytes);
 
         return Convert.ToHexString(hashBytes).ToLowerInvariant();
+    }
+
+
+    private static DateTime TruncateToSecond(DateTime dateTime)
+    {
+        return new DateTime(
+            dateTime.Year,
+            dateTime.Month,
+            dateTime.Day,
+            dateTime.Hour,
+            dateTime.Minute,
+            dateTime.Second,
+            DateTimeKind.Unspecified
+        );
+    }
+
+    private static string FormatDateTime(DateTime dateTime)
+    {
+        return TruncateToSecond(dateTime)
+            .ToString("yyyy-MM-ddTHH:mm:ss");
     }
 }
