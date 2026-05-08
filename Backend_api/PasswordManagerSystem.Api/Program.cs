@@ -31,9 +31,13 @@ namespace PasswordManagerSystem.Api
 
             var authenticationProvider = builder.Configuration["Authentication:Provider"];
 
-            if (authenticationProvider == "Mock")
+            if (string.Equals(authenticationProvider, "Mock", StringComparison.OrdinalIgnoreCase))
             {
                 builder.Services.AddScoped<IAdAuthenticationService, MockAdAuthenticationService>();
+            }
+            else if (string.Equals(authenticationProvider, "Ldap", StringComparison.OrdinalIgnoreCase))
+            {
+                builder.Services.AddScoped<IAdAuthenticationService, LdapAuthenticationService>();
             }
             else
             {
