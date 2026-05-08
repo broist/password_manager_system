@@ -8,6 +8,8 @@ using PasswordManagerSystem.Api.Application.Services;
 using PasswordManagerSystem.Api.Infrastructure.Authentication;
 using PasswordManagerSystem.Api.Infrastructure.Data;
 using PasswordManagerSystem.Api.Infrastructure.Security;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 namespace PasswordManagerSystem.Api
 {
@@ -18,6 +20,10 @@ namespace PasswordManagerSystem.Api
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddControllers();
+
+            builder.Services.AddFluentValidationAutoValidation();
+
+            builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
