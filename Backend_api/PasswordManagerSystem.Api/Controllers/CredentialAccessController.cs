@@ -28,6 +28,18 @@ public class CredentialAccessController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateAccessRule([FromBody] CreateCredentialAccessRequest request)
     {
+        var currentUserId = GetCurrentUserId();
+        var currentRoleId = GetCurrentRoleId();
+        var currentAdUsername = GetCurrentAdUsername();
+
+        var isItAdmin = IsCurrentUserItAdmin();
+        var isIt = IsCurrentUserIt();
+
+        if (!isItAdmin && !isIt)
+        {
+            return Forbid();
+        }
+
         if (request.CredentialId <= 0)
         {
             return BadRequest(new
@@ -67,6 +79,69 @@ public class CredentialAccessController : ControllerBase
             });
         }
 
+        if (isIt && !isItAdmin)
+        {
+            var now = DateTime.UtcNow;
+
+            var canCurrentItUserViewCredential = await _dbContext.CredentialAccesses
+                .AsNoTracking()
+                .AnyAsync(x =>
+                    x.CredentialId == credential.Id &&
+                    x.CanView &&
+                    (x.ExpiresAt == null || x.ExpiresAt > now) &&
+                    (
+                        x.UserId == currentUserId ||
+                        x.RoleId == currentRoleId
+                    ));
+
+            if (!canCurrentItUserViewCredential)
+            {
+                return Forbid();
+            }
+
+            if (!request.UserId.HasValue)
+            {
+                return BadRequest(new
+                {
+                    message = "IT users can only grant temporary access to a specific user. UserId is required."
+                });
+            }
+
+            if (request.RoleId.HasValue)
+            {
+                return BadRequest(new
+                {
+                    message = "IT users cannot grant role-based access."
+                });
+            }
+
+            if (request.ExpiresAt is null)
+            {
+                return BadRequest(new
+                {
+                    message = "IT users can only grant temporary access. ExpiresAt is required."
+                });
+            }
+
+            if (request.ExpiresAt <= now)
+            {
+                return BadRequest(new
+                {
+                    message = "ExpiresAt must be in the future."
+                });
+            }
+
+            if (request.CanWrite || request.CanDelete)
+            {
+                return BadRequest(new
+                {
+                    message = "IT users can only grant view access."
+                });
+            }
+
+            request.CanView = true;
+        }
+
         Role? role = null;
         User? targetUser = null;
 
@@ -97,9 +172,6 @@ public class CredentialAccessController : ControllerBase
                 });
             }
         }
-
-        var currentUserId = GetCurrentUserId();
-        var currentAdUsername = GetCurrentAdUsername();
 
         var existingRule = await _dbContext.CredentialAccesses
             .FirstOrDefaultAsync(x =>
@@ -171,6 +243,11 @@ public class CredentialAccessController : ControllerBase
     [HttpGet("credential/{credentialId:long}")]
     public async Task<IActionResult> GetAccessRulesByCredential(long credentialId)
     {
+        if (!IsCurrentUserItAdmin())
+        {
+            return Forbid();
+        }
+
         var credentialExists = await _dbContext.Credentials
             .AnyAsync(x => x.Id == credentialId);
 
@@ -211,6 +288,11 @@ public class CredentialAccessController : ControllerBase
     [HttpDelete("{id:long}")]
     public async Task<IActionResult> DeleteAccessRule(long id)
     {
+        if (!IsCurrentUserItAdmin())
+        {
+            return Forbid();
+        }
+
         var accessRule = await _dbContext.CredentialAccesses
             .Include(x => x.Credential)
             .ThenInclude(x => x.Company)
@@ -308,8 +390,43 @@ public class CredentialAccessController : ControllerBase
         return userId;
     }
 
+    private long GetCurrentRoleId()
+    {
+        var roleIdValue = User.FindFirstValue("role_id");
+
+        if (!long.TryParse(roleIdValue, out var roleId))
+        {
+            throw new InvalidOperationException("Authenticated role_id claim is missing or invalid.");
+        }
+
+        return roleId;
+    }
+
     private string GetCurrentAdUsername()
     {
         return User.FindFirstValue("ad_username") ?? "UNKNOWN";
+    }
+
+    private string GetCurrentRoleName()
+    {
+        return User.FindFirstValue("role_name") ?? string.Empty;
+    }
+
+    private bool IsCurrentUserItAdmin()
+    {
+        return string.Equals(
+            GetCurrentRoleName(),
+            "ITAdmin",
+            StringComparison.OrdinalIgnoreCase
+        );
+    }
+
+    private bool IsCurrentUserIt()
+    {
+        return string.Equals(
+            GetCurrentRoleName(),
+            "IT",
+            StringComparison.OrdinalIgnoreCase
+        );
     }
 }

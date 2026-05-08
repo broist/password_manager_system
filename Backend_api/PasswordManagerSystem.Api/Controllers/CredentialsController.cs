@@ -20,10 +20,10 @@ public class CredentialsController : ControllerBase
     private readonly ICredentialAccessService _credentialAccessService;
 
     public CredentialsController(
-    AppDbContext dbContext,
-    IEncryptionService encryptionService,
-    IAuditService auditService,
-    ICredentialAccessService credentialAccessService)
+        AppDbContext dbContext,
+        IEncryptionService encryptionService,
+        IAuditService auditService,
+        ICredentialAccessService credentialAccessService)
     {
         _dbContext = dbContext;
         _encryptionService = encryptionService;
@@ -90,6 +90,11 @@ public class CredentialsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateCredential([FromBody] CreateCredentialRequest request)
     {
+        if (!IsCurrentUserItAdmin() && !IsCurrentUserIt())
+        {
+            return Forbid();
+        }
+
         if (request.CompanyId <= 0)
         {
             return BadRequest(new
@@ -134,6 +139,7 @@ public class CredentialsController : ControllerBase
         }
 
         var currentUserId = GetCurrentUserId();
+        var currentRoleId = GetCurrentRoleId();
         var currentAdUsername = GetCurrentAdUsername();
 
         var encryptedUsername = _encryptionService.Encrypt(request.Username);
@@ -165,8 +171,6 @@ public class CredentialsController : ControllerBase
 
         _dbContext.Credentials.Add(credential);
         await _dbContext.SaveChangesAsync();
-
-        var currentRoleId = GetCurrentRoleId();
 
         var accessRule = new CredentialAccess
         {
@@ -233,8 +237,8 @@ public class CredentialsController : ControllerBase
 
     [HttpPut("{id:long}")]
     public async Task<IActionResult> UpdateCredential(
-    long id,
-    [FromBody] UpdateCredentialRequest request)
+        long id,
+        [FromBody] UpdateCredentialRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Title))
         {
@@ -606,5 +610,28 @@ public class CredentialsController : ControllerBase
     private string GetCurrentAdUsername()
     {
         return User.FindFirstValue("ad_username") ?? "UNKNOWN";
+    }
+
+    private string GetCurrentRoleName()
+    {
+        return User.FindFirstValue("role_name") ?? string.Empty;
+    }
+
+    private bool IsCurrentUserItAdmin()
+    {
+        return string.Equals(
+            GetCurrentRoleName(),
+            "ITAdmin",
+            StringComparison.OrdinalIgnoreCase
+        );
+    }
+
+    private bool IsCurrentUserIt()
+    {
+        return string.Equals(
+            GetCurrentRoleName(),
+            "IT",
+            StringComparison.OrdinalIgnoreCase
+        );
     }
 }
