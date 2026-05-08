@@ -78,14 +78,6 @@ public class CompaniesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateCompany([FromBody] CreateCompanyRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            return BadRequest(new
-            {
-                message = "Company name is required."
-            });
-        }
-
         var normalizedName = request.Name.Trim();
 
         var exists = await _dbContext.Companies
@@ -101,6 +93,7 @@ public class CompaniesController : ControllerBase
 
         var currentUserId = GetCurrentUserId();
         var currentAdUsername = GetCurrentAdUsername();
+        var now = DateTime.UtcNow;
 
         var company = new Company
         {
@@ -108,8 +101,8 @@ public class CompaniesController : ControllerBase
             Description = request.Description?.Trim(),
             IsActive = true,
             CreatedByUserId = currentUserId,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = now,
+            UpdatedAt = now
         };
 
         _dbContext.Companies.Add(company);
@@ -149,14 +142,6 @@ public class CompaniesController : ControllerBase
         long id,
         [FromBody] UpdateCompanyRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            return BadRequest(new
-            {
-                message = "Company name is required."
-            });
-        }
-
         var company = await _dbContext.Companies
             .FirstOrDefaultAsync(x => x.Id == id);
 

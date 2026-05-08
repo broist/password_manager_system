@@ -95,38 +95,6 @@ public class CredentialsController : ControllerBase
             return Forbid();
         }
 
-        if (request.CompanyId <= 0)
-        {
-            return BadRequest(new
-            {
-                message = "CompanyId is required."
-            });
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            return BadRequest(new
-            {
-                message = "Credential title is required."
-            });
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Username))
-        {
-            return BadRequest(new
-            {
-                message = "Username is required."
-            });
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Password))
-        {
-            return BadRequest(new
-            {
-                message = "Password is required."
-            });
-        }
-
         var company = await _dbContext.Companies
             .FirstOrDefaultAsync(x => x.Id == request.CompanyId && x.IsActive);
 
@@ -240,14 +208,6 @@ public class CredentialsController : ControllerBase
         long id,
         [FromBody] UpdateCredentialRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            return BadRequest(new
-            {
-                message = "Credential title is required."
-            });
-        }
-
         var credential = await _dbContext.Credentials
             .Include(x => x.Company)
             .FirstOrDefaultAsync(x => x.Id == id);

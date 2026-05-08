@@ -136,14 +136,6 @@ public class AuthController : ControllerBase
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.RefreshToken))
-        {
-            return BadRequest(new
-            {
-                message = "Refresh token is required."
-            });
-        }
-
         var existingRefreshToken = await _refreshTokenService.GetActiveRefreshTokenAsync(
             request.RefreshToken
         );
@@ -214,14 +206,6 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.RefreshToken))
-        {
-            return BadRequest(new
-            {
-                message = "Refresh token is required."
-            });
-        }
-
         var existingRefreshToken = await _refreshTokenService.GetActiveRefreshTokenAsync(
             request.RefreshToken
         );

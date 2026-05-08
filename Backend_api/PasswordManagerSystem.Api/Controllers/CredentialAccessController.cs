@@ -40,33 +40,6 @@ public class CredentialAccessController : ControllerBase
             return Forbid();
         }
 
-        if (request.CredentialId <= 0)
-        {
-            return BadRequest(new
-            {
-                message = "CredentialId is required."
-            });
-        }
-
-        var hasRoleTarget = request.RoleId.HasValue;
-        var hasUserTarget = request.UserId.HasValue;
-
-        if (hasRoleTarget == hasUserTarget)
-        {
-            return BadRequest(new
-            {
-                message = "Exactly one of RoleId or UserId must be provided."
-            });
-        }
-
-        if (!request.CanView && !request.CanWrite && !request.CanDelete)
-        {
-            return BadRequest(new
-            {
-                message = "At least one permission must be enabled."
-            });
-        }
-
         var credential = await _dbContext.Credentials
             .Include(x => x.Company)
             .FirstOrDefaultAsync(x => x.Id == request.CredentialId && x.IsActive);
@@ -120,14 +93,6 @@ public class CredentialAccessController : ControllerBase
                 return BadRequest(new
                 {
                     message = "IT users can only grant temporary access. ExpiresAt is required."
-                });
-            }
-
-            if (request.ExpiresAt <= now)
-            {
-                return BadRequest(new
-                {
-                    message = "ExpiresAt must be in the future."
                 });
             }
 
