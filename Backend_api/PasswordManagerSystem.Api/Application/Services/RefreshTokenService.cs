@@ -22,6 +22,21 @@ public class RefreshTokenService : IRefreshTokenService
 
     public async Task<string> CreateRefreshTokenAsync(User user, string? createdByIp)
     {
+        var now = DateTime.UtcNow;
+
+        var activeTokens = await _dbContext.RefreshTokens
+            .Where(x =>
+                x.UserId == user.Id &&
+                x.RevokedAt == null &&
+                x.ExpiresAt > now)
+            .ToListAsync();
+
+        foreach (var activeToken in activeTokens)
+        {
+            activeToken.RevokedAt = now;
+            activeToken.RevokedByIp = createdByIp;
+        }
+
         var refreshToken = GenerateSecureToken();
         var tokenHash = HashRefreshToken(refreshToken);
 
@@ -33,11 +48,11 @@ public class RefreshTokenService : IRefreshTokenService
         {
             UserId = user.Id,
             TokenHash = tokenHash,
-            ExpiresAt = DateTime.UtcNow.AddDays(refreshTokenDays),
+            ExpiresAt = now.AddDays(refreshTokenDays),
             RevokedAt = null,
             ReplacedByTokenHash = null,
             CreatedByIp = createdByIp,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = now
         };
 
         _dbContext.RefreshTokens.Add(entity);
