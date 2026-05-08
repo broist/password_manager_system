@@ -28,8 +28,8 @@ public class AuthController : ControllerBase
         _auditService = auditService;
     }
 
-    [HttpPost("login-test")]
-    public async Task<IActionResult> LoginTest([FromBody] LoginRequest request)
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var adUser = await _adAuthenticationService.AuthenticateAsync(
             request.Username,
