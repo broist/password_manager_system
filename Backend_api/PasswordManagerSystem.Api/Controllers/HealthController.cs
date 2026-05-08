@@ -15,27 +15,17 @@ public class HealthController : ControllerBase
         _dbContext = dbContext;
     }
 
-    [HttpGet("database")]
-    public async Task<IActionResult> CheckDatabase()
+    [HttpGet]
+    public async Task<IActionResult> GetHealth()
     {
-        var canConnect = await _dbContext.Database.CanConnectAsync();
-
-        if (!canConnect)
-        {
-            return StatusCode(503, new
-            {
-                status = "unhealthy",
-                database = "unreachable"
-            });
-        }
-
-        var roleCount = await _dbContext.Roles.CountAsync();
+        var databaseAvailable = await _dbContext.Database.CanConnectAsync();
 
         return Ok(new
         {
-            status = "healthy",
-            database = "reachable",
-            roles = roleCount
+            status = databaseAvailable ? "Healthy" : "Degraded",
+            api = "PasswordManagerSystem.Api",
+            database = databaseAvailable ? "Available" : "Unavailable",
+            utcTime = DateTime.UtcNow
         });
     }
 }
