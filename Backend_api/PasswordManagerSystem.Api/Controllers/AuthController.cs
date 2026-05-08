@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using PasswordManagerSystem.Api.Application.DTOs;
+using PasswordManagerSystem.Api.Application.DTOs.Auth;
 using PasswordManagerSystem.Api.Application.Interfaces;
 
 namespace PasswordManagerSystem.Api.Controllers;
@@ -13,19 +14,22 @@ public class AuthController : ControllerBase
     private readonly IUserSyncService _userSyncService;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IAuditService _auditService;
+    private readonly IRefreshTokenService _refreshTokenService;
 
     public AuthController(
         IAdAuthenticationService adAuthenticationService,
         IRoleResolverService roleResolverService,
         IUserSyncService userSyncService,
         IJwtTokenService jwtTokenService,
-        IAuditService auditService)
+        IAuditService auditService,
+        IRefreshTokenService refreshTokenService)
     {
         _adAuthenticationService = adAuthenticationService;
         _roleResolverService = roleResolverService;
         _userSyncService = userSyncService;
         _jwtTokenService = jwtTokenService;
         _auditService = auditService;
+        _refreshTokenService = refreshTokenService;
     }
 
     [HttpPost("login")]
@@ -82,6 +86,11 @@ public class AuthController : ControllerBase
 
         var accessToken = _jwtTokenService.GenerateAccessToken(user, resolvedRole);
 
+        var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(
+            user,
+            HttpContext.Connection.RemoteIpAddress?.ToString()
+        );
+
         await _auditService.LogAsync(
             action: "LOGIN_SUCCESS",
             success: true,
@@ -91,33 +100,148 @@ public class AuthController : ControllerBase
             targetId: user.Id
         );
 
-        return Ok(new
+        return Ok(new LoginResponse
         {
-            message = "Mock AD authentication successful.",
-            accessToken,
-            tokenType = "Bearer",
-            expiresInMinutes = 60,
-            user = new
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            TokenType = "Bearer",
+            ExpiresInMinutes = 60,
+            User = new UserInfoResponse
             {
-                user.Id,
-                user.AdUsername,
-                user.DisplayName,
-                user.Email,
-                user.RoleId,
-                user.IsActive,
-                user.FirstLoginAt,
-                user.LastLoginAt,
-                user.RoleSyncedAt
+                Id = user.Id,
+                AdUsername = user.AdUsername,
+                DisplayName = user.DisplayName ?? user.AdUsername,
+                Email = user.Email,
+                RoleId = user.RoleId,
+                IsActive = user.IsActive,
+                FirstLoginAt = user.FirstLoginAt,
+                LastLoginAt = user.LastLoginAt,
+                RoleSyncedAt = user.RoleSyncedAt
             },
-            role = new
+            Role = new RoleInfoResponse
             {
-                resolvedRole.Id,
-                resolvedRole.Name,
-                resolvedRole.DisplayName,
-                resolvedRole.AdGroupName,
-                resolvedRole.Level
+                Id = resolvedRole.Id,
+                Name = resolvedRole.Name,
+                DisplayName = resolvedRole.DisplayName ?? resolvedRole.Name,
+                AdGroupName = resolvedRole.AdGroupName,
+                Level = resolvedRole.Level
             },
-            groups = adUser.Groups
+            Groups = adUser.Groups
         });
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+        {
+            return BadRequest(new
+            {
+                message = "Refresh token is required."
+            });
+        }
+
+        var existingRefreshToken = await _refreshTokenService.GetActiveRefreshTokenAsync(
+            request.RefreshToken
+        );
+
+        if (existingRefreshToken is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid or expired refresh token."
+            });
+        }
+
+        var user = existingRefreshToken.User;
+
+        if (!user.IsActive)
+        {
+            return Unauthorized(new
+            {
+                message = "User is inactive."
+            });
+        }
+
+        var role = await _roleResolverService.ResolveHighestRoleAsync(
+            new[] { user.Role.AdGroupName }
+        );
+
+        if (role is null)
+        {
+            return Unauthorized(new
+            {
+                message = "User has no valid application role."
+            });
+        }
+
+        var accessToken = _jwtTokenService.GenerateAccessToken(user, role);
+
+        var newRefreshToken = await _refreshTokenService.CreateRefreshTokenAsync(
+            user,
+            HttpContext.Connection.RemoteIpAddress?.ToString()
+        );
+
+        var newRefreshTokenHash = _refreshTokenService.HashRefreshToken(newRefreshToken);
+
+        await _refreshTokenService.RevokeRefreshTokenAsync(
+            existingRefreshToken,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            newRefreshTokenHash
+        );
+
+        await _auditService.LogAsync(
+            action: "TOKEN_REFRESHED",
+            success: true,
+            userId: user.Id,
+            adUsername: user.AdUsername,
+            targetType: "User",
+            targetId: user.Id
+        );
+
+        return Ok(new RefreshTokenResponse
+        {
+            AccessToken = accessToken,
+            RefreshToken = newRefreshToken,
+            TokenType = "Bearer",
+            ExpiresInMinutes = 60
+        });
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+        {
+            return BadRequest(new
+            {
+                message = "Refresh token is required."
+            });
+        }
+
+        var existingRefreshToken = await _refreshTokenService.GetActiveRefreshTokenAsync(
+            request.RefreshToken
+        );
+
+        if (existingRefreshToken is null)
+        {
+            return NoContent();
+        }
+
+        await _refreshTokenService.RevokeRefreshTokenAsync(
+            existingRefreshToken,
+            HttpContext.Connection.RemoteIpAddress?.ToString()
+        );
+
+        await _auditService.LogAsync(
+            action: "LOGOUT",
+            success: true,
+            userId: existingRefreshToken.UserId,
+            adUsername: existingRefreshToken.User.AdUsername,
+            targetType: "User",
+            targetId: existingRefreshToken.UserId
+        );
+
+        return NoContent();
     }
 }

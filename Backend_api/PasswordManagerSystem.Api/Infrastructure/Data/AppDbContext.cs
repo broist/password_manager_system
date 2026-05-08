@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<Credential> Credentials => Set<Credential>();
     public DbSet<CredentialAccess> CredentialAccesses => Set<CredentialAccess>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -27,6 +28,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Credential>().ToTable("credentials");
         modelBuilder.Entity<CredentialAccess>().ToTable("credential_access");
         modelBuilder.Entity<AuditLog>().ToTable("audit_log");
+        modelBuilder.Entity<RefreshToken>().ToTable("refresh_tokens");
 
         modelBuilder.Entity<Role>(entity =>
         {
@@ -171,6 +173,55 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.TargetUserId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.ToTable("refresh_tokens");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+
+            entity.Property(e => e.UserId)
+                .HasColumnName("user_id");
+
+            entity.Property(e => e.TokenHash)
+                .HasColumnName("token_hash")
+                .HasMaxLength(128)
+                .IsRequired();
+
+            entity.Property(e => e.ExpiresAt)
+                .HasColumnName("expires_at");
+
+            entity.Property(e => e.RevokedAt)
+                .HasColumnName("revoked_at");
+
+            entity.Property(e => e.ReplacedByTokenHash)
+                .HasColumnName("replaced_by_token_hash")
+                .HasMaxLength(128);
+
+            entity.Property(e => e.CreatedByIp)
+                .HasColumnName("created_by_ip")
+                .HasMaxLength(45);
+
+            entity.Property(e => e.RevokedByIp)
+                .HasColumnName("revoked_by_ip")
+                .HasMaxLength(45);
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at");
+
+            entity.HasIndex(e => e.TokenHash)
+                .IsUnique();
+
+            entity.HasIndex(e => e.UserId);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

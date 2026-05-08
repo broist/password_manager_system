@@ -51,6 +51,7 @@ namespace PasswordManagerSystem.Api
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
             builder.Services.AddScoped<IEncryptionService, AesGcmEncryptionService>();
             builder.Services.AddScoped<ICredentialAccessService, CredentialAccessService>();
+            builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<IAuditService, AuditService>();
