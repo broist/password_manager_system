@@ -17,6 +17,7 @@ A jelenlegi backend főbb technológiai elemei:
 - AES-256-GCM alapú credential titkosítás
 - Hash-chain alapú audit naplózás
 - FluentValidation alapú request validáció
+- kriptográfiailag biztonságos jelszógenerátor endpoint
 - Mock és LDAP alapú authentikációs stratégia
 - Health endpoint backend és adatbázis elérhetőséghez
 
@@ -249,6 +250,58 @@ Például ha egy `IT` szerepkörű felhasználó hoz létre bejegyzést, akkor a
 
 Az `ITAdmin` ezt később módosíthatja vagy visszavonhatja. Ha az `IT` szerepkör már nem látja a credentialt, akkor nem is tudja módosítani vagy törölni.
 
+## Jelszógenerátor
+
+A backend tartalmaz egy beépített jelszógenerátor funkciót, amely új credential létrehozásakor használható. A célja, hogy a felhasználó ne kézzel adjon meg gyenge vagy újrahasznált jelszót, hanem az alkalmazás tudjon erős, véletlenszerű jelszót előállítani.
+
+Endpoint:
+
+- `POST /api/PasswordGenerator/generate`
+
+Az endpoint JWT authentikációt igényel, tehát csak bejelentkezett felhasználó hívhatja.
+
+Request példa:
+
+```json
+{
+  "length": 20,
+  "includeUppercase": true,
+  "includeLowercase": true,
+  "includeDigits": true,
+  "includeSpecialCharacters": true
+}
+```
+
+Sikeres válasz példa:
+
+```json
+{
+  "password": "A9x!fK2#mP7qLz@vT4sB",
+  "length": 20,
+  "includesUppercase": true,
+  "includesLowercase": true,
+  "includesDigits": true,
+  "includesSpecialCharacters": true
+}
+```
+
+A jelszógenerátor az alábbi opciókat támogatja:
+
+- jelszóhossz megadása
+- nagybetűk engedélyezése
+- kisbetűk engedélyezése
+- számjegyek engedélyezése
+- speciális karakterek engedélyezése
+
+A generálás `RandomNumberGenerator` használatával történik, ezért kriptográfiailag biztonságosabb, mint a hagyományos `Random` alapú megoldás. A generált jelszó minden bekapcsolt karakterkészletből legalább egy karaktert tartalmaz.
+
+Validációs szabályok:
+
+- a jelszó hossza minimum 8, maximum 128 karakter lehet
+- legalább egy karakterkészletet engedélyezni kell
+
+A WPF kliens később ezt az endpointot használhatja az új credential létrehozási felületen.
+
 ## Reveal endpointok
 
 A rendszer külön endpointokat használ a titkosított adatok visszafejtésére:
@@ -378,6 +431,7 @@ Jelenlegi validátorok:
 - `CreateCredentialRequestValidator`
 - `UpdateCredentialRequestValidator`
 - `CreateCredentialAccessRequestValidator`
+- `GeneratePasswordRequestValidator`
 
 A controllerekből a duplikált kézi validációk jelentős része eltávolításra került. A controllerekben főként az üzleti logika, jogosultságellenőrzés, adatbázis műveletek és auditálás maradt.
 
@@ -467,3 +521,6 @@ A következő működések tesztelve lettek:
 - logout utáni refresh token tiltása
 - egy felhasználóhoz csak egy aktív refresh token engedélyezése
 - FluentValidation validációs hibák
+- jelszógenerátor endpoint
+- jelszógenerátor validáció
+- kriptográfiailag biztonságos jelszógenerálás
