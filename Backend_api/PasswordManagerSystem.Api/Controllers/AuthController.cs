@@ -15,6 +15,7 @@ public class AuthController : ControllerBase
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IAuditService _auditService;
     private readonly IRefreshTokenService _refreshTokenService;
+    private readonly IConfiguration _configuration;
 
     public AuthController(
         IAdAuthenticationService adAuthenticationService,
@@ -22,7 +23,8 @@ public class AuthController : ControllerBase
         IUserSyncService userSyncService,
         IJwtTokenService jwtTokenService,
         IAuditService auditService,
-        IRefreshTokenService refreshTokenService)
+        IRefreshTokenService refreshTokenService,
+        IConfiguration configuration)
     {
         _adAuthenticationService = adAuthenticationService;
         _roleResolverService = roleResolverService;
@@ -30,6 +32,7 @@ public class AuthController : ControllerBase
         _jwtTokenService = jwtTokenService;
         _auditService = auditService;
         _refreshTokenService = refreshTokenService;
+        _configuration = configuration;
     }
 
     [HttpPost("login")]
@@ -105,7 +108,7 @@ public class AuthController : ControllerBase
             AccessToken = accessToken,
             RefreshToken = refreshToken,
             TokenType = "Bearer",
-            ExpiresInMinutes = 60,
+            ExpiresInMinutes = GetAccessTokenMinutes(),
             User = new UserInfoResponse
             {
                 Id = user.Id,
@@ -204,7 +207,7 @@ public class AuthController : ControllerBase
             AccessToken = accessToken,
             RefreshToken = newRefreshToken,
             TokenType = "Bearer",
-            ExpiresInMinutes = 60
+            ExpiresInMinutes = GetAccessTokenMinutes()
         });
     }
 
@@ -243,5 +246,10 @@ public class AuthController : ControllerBase
         );
 
         return NoContent();
+    }
+
+    private int GetAccessTokenMinutes()
+    {
+        return int.Parse(_configuration["Jwt:AccessTokenMinutes"] ?? "60");
     }
 }
