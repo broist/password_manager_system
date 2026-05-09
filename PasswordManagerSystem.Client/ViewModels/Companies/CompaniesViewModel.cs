@@ -1,11 +1,12 @@
 using System.Collections.ObjectModel;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using PasswordManagerSystem.Client.Models.Companies;
 using PasswordManagerSystem.Client.Services.Api;
 using PasswordManagerSystem.Client.Services.Notifications;
-using System.Windows;
+using PasswordManagerSystem.Client.Services.Session;
 using PasswordManagerSystem.Client.Views.Companies;
 
 namespace PasswordManagerSystem.Client.ViewModels.Companies;
@@ -14,15 +15,18 @@ public sealed partial class CompaniesViewModel : ObservableObject
 {
     private readonly ICompaniesService _companiesService;
     private readonly IToastService _toastService;
+    private readonly ISessionService _sessionService;
     private readonly ILogger<CompaniesViewModel> _logger;
 
     public CompaniesViewModel(
         ICompaniesService companiesService,
         IToastService toastService,
+        ISessionService sessionService,
         ILogger<CompaniesViewModel> logger)
     {
         _companiesService = companiesService;
         _toastService = toastService;
+        _sessionService = sessionService;
         _logger = logger;
 
         _ = LoadCompaniesAsync();
@@ -31,19 +35,22 @@ public sealed partial class CompaniesViewModel : ObservableObject
     public ObservableCollection<CompanyResponse> Companies { get; } = new();
 
     [ObservableProperty]
-	[NotifyPropertyChangedFor(nameof(HasSelectedCompany))]
-	[NotifyCanExecuteChangedFor(nameof(StartEditCommand))]
-	[NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
-	[NotifyCanExecuteChangedFor(nameof(DeactivateCompanyCommand))]
-	private CompanyResponse? _selectedCompany;
+    [NotifyPropertyChangedFor(nameof(HasSelectedCompany))]
+    [NotifyCanExecuteChangedFor(nameof(StartEditCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
+    [NotifyCanExecuteChangedFor(nameof(DeactivateCompanyCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RestoreCompanyCommand))]
+    private CompanyResponse? _selectedCompany;
 
     [ObservableProperty]
-	[NotifyCanExecuteChangedFor(nameof(StartCreateCommand))]
-	[NotifyCanExecuteChangedFor(nameof(StartEditCommand))]
-	[NotifyCanExecuteChangedFor(nameof(SaveCreateCommand))]
-	[NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
-	[NotifyCanExecuteChangedFor(nameof(DeactivateCompanyCommand))]
-	private bool _isLoading;
+    [NotifyCanExecuteChangedFor(nameof(StartCreateCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StartEditCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SaveCreateCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
+    [NotifyCanExecuteChangedFor(nameof(DeactivateCompanyCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RestoreCompanyCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleInactiveCompaniesCommand))]
+    private bool _isLoading;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsReadOnlyMode))]
@@ -60,6 +67,14 @@ public sealed partial class CompaniesViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
     [NotifyCanExecuteChangedFor(nameof(CancelEditCommand))]
     private bool _isEditMode;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsInactiveModeLabel))]
+    [NotifyCanExecuteChangedFor(nameof(StartCreateCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StartEditCommand))]
+    [NotifyCanExecuteChangedFor(nameof(DeactivateCompanyCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RestoreCompanyCommand))]
+    private bool _showInactiveCompanies;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SaveCreateCommand))]
@@ -82,6 +97,12 @@ public sealed partial class CompaniesViewModel : ObservableObject
 
     public bool IsReadOnlyMode => !IsCreateMode && !IsEditMode;
 
+    public bool CanRestoreCompanies => _sessionService.IsItAdmin;
+
+    public string IsInactiveModeLabel => ShowInactiveCompanies
+        ? "Aktív cégek"
+        : "Inaktív cégek";
+
     [RelayCommand]
     private async Task LoadCompaniesAsync()
     {
@@ -90,18 +111,25 @@ public sealed partial class CompaniesViewModel : ObservableObject
 
         try
         {
+            if (!_sessionService.IsItAdmin && ShowInactiveCompanies)
+            {
+                ShowInactiveCompanies = false;
+            }
+
             var selectedCompanyId = SelectedCompany?.Id;
 
             var companies = await _companiesService.GetAllAsync();
 
             Companies.Clear();
 
-            foreach (var company in companies
-				 .Where(c => c.IsActive)
-				 .OrderBy(c => c.Name))
-			{
-				Companies.Add(company);
-			}
+            var filteredCompanies = companies
+                .Where(c => ShowInactiveCompanies ? !c.IsActive : c.IsActive)
+                .OrderBy(c => c.Name);
+
+            foreach (var company in filteredCompanies)
+            {
+                Companies.Add(company);
+            }
 
             if (selectedCompanyId is not null)
             {
@@ -128,9 +156,29 @@ public sealed partial class CompaniesViewModel : ObservableObject
         }
     }
 
+    private bool CanToggleInactiveCompanies()
+    {
+        return !IsLoading &&
+               !IsCreateMode &&
+               !IsEditMode &&
+               _sessionService.IsItAdmin;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanToggleInactiveCompanies))]
+    private async Task ToggleInactiveCompaniesAsync()
+    {
+        ShowInactiveCompanies = !ShowInactiveCompanies;
+        SelectedCompany = null;
+
+        await LoadCompaniesAsync();
+    }
+
     private bool CanStartCreate()
     {
-        return !IsLoading && !IsCreateMode && !IsEditMode;
+        return !IsLoading &&
+               !IsCreateMode &&
+               !IsEditMode &&
+               !ShowInactiveCompanies;
     }
 
     [RelayCommand(CanExecute = nameof(CanStartCreate))]
@@ -188,6 +236,7 @@ public sealed partial class CompaniesViewModel : ObservableObject
             NewCompanyName = string.Empty;
             NewCompanyDescription = null;
             IsCreateMode = false;
+            ShowInactiveCompanies = false;
 
             await LoadCompaniesAsync();
 
@@ -221,6 +270,7 @@ public sealed partial class CompaniesViewModel : ObservableObject
         return !IsLoading &&
                !IsCreateMode &&
                !IsEditMode &&
+               !ShowInactiveCompanies &&
                SelectedCompany is not null;
     }
 
@@ -314,77 +364,136 @@ public sealed partial class CompaniesViewModel : ObservableObject
             IsLoading = false;
         }
     }
-	
-	private bool CanDeactivateCompany()
-	{
-		return !IsLoading &&
-			   !IsCreateMode &&
-			   !IsEditMode &&
-			   SelectedCompany is not null;
-	}
 
-	[RelayCommand(CanExecute = nameof(CanDeactivateCompany))]
-	private async Task DeactivateCompanyAsync()
-	{
-		if (SelectedCompany is null)
-		{
-			return;
-		}
+    private bool CanDeactivateCompany()
+    {
+        return !IsLoading &&
+               !IsCreateMode &&
+               !IsEditMode &&
+               !ShowInactiveCompanies &&
+               SelectedCompany is not null;
+    }
 
-		var company = SelectedCompany;
+    [RelayCommand(CanExecute = nameof(CanDeactivateCompany))]
+    private async Task DeactivateCompanyAsync()
+    {
+        if (SelectedCompany is null)
+        {
+            return;
+        }
 
-		var owner = Application.Current.Windows
-		.OfType<Window>()
-		.FirstOrDefault(x => x.IsActive)
-		?? Application.Current.MainWindow;
+        var company = SelectedCompany;
 
-		var confirmWindow = new DeactivateCompanyConfirmWindow(company.Name)
-		{
-			Owner = owner
-		};
+        var owner = Application.Current.Windows
+            .OfType<Window>()
+            .FirstOrDefault(x => x.IsActive)
+            ?? Application.Current.MainWindow;
 
-		var result = confirmWindow.ShowDialog();
+        var confirmWindow = new DeactivateCompanyConfirmWindow(company.Name)
+        {
+            Owner = owner
+        };
 
-		if (result != true || !confirmWindow.IsConfirmed)
-		{
-			return;
-		}
+        var result = confirmWindow.ShowDialog();
 
-		IsLoading = true;
-		ErrorMessage = null;
+        if (result != true || !confirmWindow.IsConfirmed)
+        {
+            return;
+        }
 
-		try
-		{
-			var request = new UpdateCompanyRequest
-			{
-				Name = company.Name,
-				Description = company.Description,
-				IsActive = false
-			};
+        IsLoading = true;
+        ErrorMessage = null;
 
-			await _companiesService.UpdateAsync(company.Id, request);
+        try
+        {
+            var request = new UpdateCompanyRequest
+            {
+                Name = company.Name,
+                Description = company.Description,
+                IsActive = false
+            };
 
-			SelectedCompany = null;
+            await _companiesService.UpdateAsync(company.Id, request);
 
-			await LoadCompaniesAsync();
+            SelectedCompany = null;
 
-			_toastService.ShowSuccess("Ceg elrejtve.");
-		}
-		catch (ApiException ex)
-		{
-			ErrorMessage = ex.Message;
-			_toastService.ShowError($"Ceg elrejtese sikertelen: {ex.Message}");
-			_logger.LogWarning(ex, "Company deactivate failed.");
-		}
-		catch (Exception ex)
-		{
-			ErrorMessage = ex.Message;
-			_toastService.ShowError($"Varatlan hiba: {ex.Message}");
-			_logger.LogError(ex, "Company deactivate unexpected error.");
-		}
-		finally
-		{
-			IsLoading = false;
-		}
-	}
+            await LoadCompaniesAsync();
+
+            _toastService.ShowSuccess("Cég elrejtve.");
+        }
+        catch (ApiException ex)
+        {
+            ErrorMessage = ex.Message;
+            _toastService.ShowError($"Cég elrejtése sikertelen: {ex.Message}");
+            _logger.LogWarning(ex, "Company deactivate failed.");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            _toastService.ShowError($"Váratlan hiba: {ex.Message}");
+            _logger.LogError(ex, "Company deactivate unexpected error.");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private bool CanRestoreCompany()
+    {
+        return !IsLoading &&
+               !IsCreateMode &&
+               !IsEditMode &&
+               ShowInactiveCompanies &&
+               _sessionService.IsItAdmin &&
+               SelectedCompany is not null;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRestoreCompany))]
+    private async Task RestoreCompanyAsync()
+    {
+        if (SelectedCompany is null)
+        {
+            return;
+        }
+
+        var company = SelectedCompany;
+
+        IsLoading = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var request = new UpdateCompanyRequest
+            {
+                Name = company.Name,
+                Description = company.Description,
+                IsActive = true
+            };
+
+            await _companiesService.UpdateAsync(company.Id, request);
+
+            SelectedCompany = null;
+
+            await LoadCompaniesAsync();
+
+            _toastService.ShowSuccess("Cég visszaállítva.");
+        }
+        catch (ApiException ex)
+        {
+            ErrorMessage = ex.Message;
+            _toastService.ShowError($"Cég visszaállítása sikertelen: {ex.Message}");
+            _logger.LogWarning(ex, "Company restore failed.");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            _toastService.ShowError($"Váratlan hiba: {ex.Message}");
+            _logger.LogError(ex, "Company restore unexpected error.");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
 }
