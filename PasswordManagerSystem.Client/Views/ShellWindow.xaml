@@ -7,6 +7,8 @@
         xmlns:vm="clr-namespace:PasswordManagerSystem.Client.ViewModels"
         xmlns:credvm="clr-namespace:PasswordManagerSystem.Client.ViewModels.Credentials"
         xmlns:credv="clr-namespace:PasswordManagerSystem.Client.Views.Credentials"
+		xmlns:compvm="clr-namespace:PasswordManagerSystem.Client.ViewModels.Companies"
+		xmlns:compv="clr-namespace:PasswordManagerSystem.Client.Views.Companies"
         mc:Ignorable="d"
         Title="Password Manager System"
         Width="1320"
@@ -22,6 +24,10 @@
         <DataTemplate DataType="{x:Type credvm:CredentialListViewModel}">
             <credv:CredentialListView/>
         </DataTemplate>
+		
+		<DataTemplate DataType="{x:Type compvm:CompaniesViewModel}">
+			<compv:CompaniesView/>
+		</DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:PlaceholderViewModel}">
             <Grid Background="{DynamicResource Brush.Surface.Panel}">
@@ -50,6 +56,7 @@
                                TextAlignment="Center"/>
                 </StackPanel>
             </Grid>
+			
         </DataTemplate>
     </Window.Resources>
 

@@ -15,6 +15,7 @@ using PasswordManagerSystem.Client.Services.Session;
 using PasswordManagerSystem.Client.ViewModels;
 using PasswordManagerSystem.Client.ViewModels.Credentials;
 using PasswordManagerSystem.Client.Views;
+using PasswordManagerSystem.Client.ViewModels.Companies;
 
 namespace PasswordManagerSystem.Client;
 
@@ -173,6 +174,7 @@ public partial class App : Application
         services.AddTransient<LoginViewModel>();
         services.AddTransient<ShellViewModel>();
         services.AddTransient<CredentialListViewModel>();
+		services.AddTransient<CompaniesViewModel>();
 
         services.AddTransient<Func<long, string, CredentialEditorViewModel>>(sp =>
         {

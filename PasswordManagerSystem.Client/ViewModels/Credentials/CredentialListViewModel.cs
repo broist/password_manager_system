@@ -28,6 +28,8 @@ public sealed partial class CredentialListViewModel : ObservableObject
     private readonly ILogger<CredentialListViewModel> _logger;
     private readonly SessionSettings _sessionSettings;
 
+    private readonly List<CredentialListItemResponse> _allCredentials = new();
+
     private CancellationTokenSource? _autoMaskCts;
 
     public CredentialListViewModel(
@@ -128,6 +130,11 @@ public sealed partial class CredentialListViewModel : ObservableObject
 
     public bool CanEditDeleteCredentials => _sessionService.CanCreateCredentials;
 
+    private async Task InitializeAsync()
+    {
+        await LoadCompaniesAsync();
+    }
+
     private bool CanCreateCredential()
     {
         return !IsLoading &&
@@ -190,11 +197,6 @@ public sealed partial class CredentialListViewModel : ObservableObject
         }
     }
 
-    private async Task InitializeAsync()
-    {
-        await LoadCompaniesAsync();
-    }
-
     [RelayCommand]
     private async Task LoadCompaniesAsync()
     {
@@ -238,6 +240,7 @@ public sealed partial class CredentialListViewModel : ObservableObject
 
     partial void OnSelectedCompanyChanged(CompanyResponse? value)
     {
+        SearchText = string.Empty;
         _ = LoadCredentialsAsync(value?.Id);
     }
 
@@ -245,6 +248,11 @@ public sealed partial class CredentialListViewModel : ObservableObject
     {
         ResetRevealedValues();
         CancelEditState();
+    }
+
+    partial void OnSearchTextChanged(string? value)
+    {
+        ApplyCredentialFilter(preserveSelection: true);
     }
 
     private async Task LoadCredentialsAsync(long? companyId)
@@ -257,14 +265,14 @@ public sealed partial class CredentialListViewModel : ObservableObject
 
             var list = await _credentialsService.GetAllAsync(companyId);
 
-            Credentials.Clear();
+            _allCredentials.Clear();
 
             foreach (var credential in list.OrderBy(c => c.Title))
             {
-                Credentials.Add(credential);
+                _allCredentials.Add(credential);
             }
 
-            SelectedCredential = Credentials.FirstOrDefault();
+            ApplyCredentialFilter(preserveSelection: false);
         }
         catch (ApiException ex)
         {
@@ -288,6 +296,59 @@ public sealed partial class CredentialListViewModel : ObservableObject
         {
             IsLoading = false;
         }
+    }
+
+    private void ApplyCredentialFilter(bool preserveSelection)
+    {
+        var selectedCredentialId = preserveSelection
+            ? SelectedCredential?.Id
+            : null;
+
+        var filteredCredentials = GetFilteredCredentials();
+
+        Credentials.Clear();
+
+        foreach (var credential in filteredCredentials)
+        {
+            Credentials.Add(credential);
+        }
+
+        if (selectedCredentialId is not null)
+        {
+            SelectedCredential = Credentials.FirstOrDefault(x => x.Id == selectedCredentialId.Value);
+        }
+
+        if (SelectedCredential is null || !Credentials.Any(x => x.Id == SelectedCredential.Id))
+        {
+            SelectedCredential = Credentials.FirstOrDefault();
+        }
+    }
+
+    private IEnumerable<CredentialListItemResponse> GetFilteredCredentials()
+    {
+        var query = SearchText?.Trim();
+
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return _allCredentials.OrderBy(c => c.Title);
+        }
+
+        return _allCredentials
+            .Where(c => CredentialMatchesSearch(c, query))
+            .OrderBy(c => c.Title);
+    }
+
+    private static bool CredentialMatchesSearch(CredentialListItemResponse credential, string query)
+    {
+        return ContainsSearchText(credential.Title, query) ||
+               ContainsSearchText(credential.Notes, query) ||
+               ContainsSearchText(credential.ConnectionValue, query);
+    }
+
+    private static bool ContainsSearchText(string? value, string query)
+    {
+        return !string.IsNullOrWhiteSpace(value) &&
+               value.Contains(query, StringComparison.OrdinalIgnoreCase);
     }
 
     private bool CanStartEdit()

@@ -11,6 +11,7 @@ using PasswordManagerSystem.Client.Services.Notifications;
 using PasswordManagerSystem.Client.Services.Session;
 using PasswordManagerSystem.Client.ViewModels.Credentials;
 using PasswordManagerSystem.Client.Views;
+using PasswordManagerSystem.Client.ViewModels.Companies;
 
 namespace PasswordManagerSystem.Client.ViewModels;
 
@@ -72,7 +73,7 @@ public sealed partial class ShellViewModel : ObservableObject
     private void BuildNavigation()
     {
         NavigationItems.Add(new NavItem("Bejegyzések", "Icon.Key", typeof(CredentialListViewModel)));
-        NavigationItems.Add(new NavItem("Cégek", "Icon.Building", null) { IsPlaceholder = true });
+        NavigationItems.Add(new NavItem("Cégek", "Icon.Building", typeof(CompaniesViewModel)));
 
         if (_sessionService.CanManageAccess)
         {
