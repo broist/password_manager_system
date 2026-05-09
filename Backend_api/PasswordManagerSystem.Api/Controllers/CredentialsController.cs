@@ -40,7 +40,7 @@ public class CredentialsController : ControllerBase
         var query = _dbContext.Credentials
             .AsNoTracking()
             .Include(x => x.Company)
-            .Where(x => x.IsActive);
+            .Where(x => x.IsActive && x.Company.IsActive);
 
         if (companyId.HasValue)
         {
