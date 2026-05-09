@@ -358,6 +358,29 @@ GET /api/Health
 
 JWT nélkül hívható. A WPF kliens induláskor használhatja backend- és adatbázis-elérhetőség ellenőrzésre.
 
+## Password generator endpoint
+
+```text
+POST /api/PasswordGenerator/generate
+
+Sikeres válasz:
+{
+  "password": "A9x!fK2#mP7qLz@vT4sB",
+  "length": 20,
+  "includesUppercase": true,
+  "includesLowercase": true,
+  "includesDigits": true,
+  "includesSpecialCharacters": true
+}
+```
+Validációs szabályok:
+
+a jelszó hossza minimum 8, maximum 128 karakter lehet
+legalább egy karakterkészletet engedélyezni kell
+a generálás kriptográfiailag biztonságos RandomNumberGenerator használatával történik
+minden bekapcsolt karakterkészletből legalább egy karakter bekerül a generált jelszóba
+
+
 ## FluentValidation
 
 A request DTO-k validációja FluentValidation alapon működik.

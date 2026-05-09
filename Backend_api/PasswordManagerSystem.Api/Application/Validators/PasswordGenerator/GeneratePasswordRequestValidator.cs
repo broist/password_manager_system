@@ -18,5 +18,12 @@ public class GeneratePasswordRequestValidator : AbstractValidator<GeneratePasswo
                 x.IncludeDigits ||
                 x.IncludeSpecialCharacters)
             .WithMessage("At least one character set must be enabled.");
+
+        RuleFor(x => x)
+            .Must(x =>
+                x.IncludeUppercase ||
+                x.IncludeLowercase ||
+                x.IncludeSpecialCharacters)
+            .WithMessage("At least one non-digit character set must be enabled because the password cannot start with a digit.");
     }
 }

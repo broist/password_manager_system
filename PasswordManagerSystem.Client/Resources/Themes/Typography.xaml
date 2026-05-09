@@ -1,0 +1,97 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Typography rendszer.
+        Elsődleges font: Segoe UI Variable (Windows 11 alapfont, modern és olvasható).
+        Fallback: Segoe UI.
+    -->
+
+    <FontFamily x:Key="Font.Sans">Segoe UI Variable Display, Segoe UI, Arial</FontFamily>
+    <FontFamily x:Key="Font.Mono">Cascadia Mono, Consolas, Courier New</FontFamily>
+
+    <!-- Type scale -->
+    <System:Double xmlns:System="clr-namespace:System;assembly=mscorlib" x:Key="Font.Size.XS">11</System:Double>
+    <System:Double xmlns:System="clr-namespace:System;assembly=mscorlib" x:Key="Font.Size.SM">12</System:Double>
+    <System:Double xmlns:System="clr-namespace:System;assembly=mscorlib" x:Key="Font.Size.MD">13</System:Double>
+    <System:Double xmlns:System="clr-namespace:System;assembly=mscorlib" x:Key="Font.Size.LG">15</System:Double>
+    <System:Double xmlns:System="clr-namespace:System;assembly=mscorlib" x:Key="Font.Size.XL">18</System:Double>
+    <System:Double xmlns:System="clr-namespace:System;assembly=mscorlib" x:Key="Font.Size.2XL">22</System:Double>
+    <System:Double xmlns:System="clr-namespace:System;assembly=mscorlib" x:Key="Font.Size.3XL">28</System:Double>
+    <System:Double xmlns:System="clr-namespace:System;assembly=mscorlib" x:Key="Font.Size.4XL">36</System:Double>
+
+    <!-- Reusable text styles. A TextBlock minden helyen ezeket örökli. -->
+
+    <Style x:Key="Text.Display" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Sans}"/>
+        <Setter Property="FontSize" Value="{StaticResource Font.Size.4XL}"/>
+        <Setter Property="FontWeight" Value="Light"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+        <Setter Property="LineHeight" Value="44"/>
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
+    </Style>
+
+    <Style x:Key="Text.Heading1" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Sans}"/>
+        <Setter Property="FontSize" Value="{StaticResource Font.Size.3XL}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
+    </Style>
+
+    <Style x:Key="Text.Heading2" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Sans}"/>
+        <Setter Property="FontSize" Value="{StaticResource Font.Size.2XL}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
+    </Style>
+
+    <Style x:Key="Text.Heading3" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Sans}"/>
+        <Setter Property="FontSize" Value="{StaticResource Font.Size.XL}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
+    </Style>
+
+    <Style x:Key="Text.Body" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Sans}"/>
+        <Setter Property="FontSize" Value="{StaticResource Font.Size.MD}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
+    </Style>
+
+    <Style x:Key="Text.BodyLarge" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontSize" Value="{StaticResource Font.Size.LG}"/>
+    </Style>
+
+    <Style x:Key="Text.BodySmall" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontSize" Value="{StaticResource Font.Size.SM}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}"/>
+    </Style>
+
+    <Style x:Key="Text.Caption" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontSize" Value="{StaticResource Font.Size.XS}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+    </Style>
+
+    <Style x:Key="Text.Mono" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Mono}"/>
+        <Setter Property="FontSize" Value="{StaticResource Font.Size.MD}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
+    </Style>
+
+    <!-- Default TextBlock style -->
+    <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Body}"/>
+
+</ResourceDictionary>

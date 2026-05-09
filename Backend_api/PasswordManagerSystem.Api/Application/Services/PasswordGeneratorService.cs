@@ -50,8 +50,9 @@ public class PasswordGeneratorService : IPasswordGeneratorService
         }
 
         Shuffle(passwordCharacters);
+		EnsureFirstCharacterIsNotDigit(passwordCharacters);
 
-        var password = new string(passwordCharacters.ToArray());
+		var password = new string(passwordCharacters.ToArray());
 
         return new GeneratePasswordResponse
         {
@@ -80,4 +81,30 @@ public class PasswordGeneratorService : IPasswordGeneratorService
             (characters[i], characters[j]) = (characters[j], characters[i]);
         }
     }
+	
+	private static void EnsureFirstCharacterIsNotDigit(IList<char> characters)
+{
+    if (characters.Count == 0)
+    {
+        return;
+    }
+
+    if (!char.IsDigit(characters[0]))
+    {
+        return;
+    }
+
+    for (var i = 1; i < characters.Count; i++)
+    {
+        if (!char.IsDigit(characters[i]))
+        {
+            (characters[0], characters[i]) = (characters[i], characters[0]);
+            return;
+        }
+    }
+
+    throw new InvalidOperationException(
+        "Generated password cannot satisfy the rule: first character cannot be a digit."
+    );
+}
 }
