@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using PasswordManagerSystem.Client.Models.Companies;
 using PasswordManagerSystem.Client.Services.Api;
 using PasswordManagerSystem.Client.Services.Notifications;
+using System.Windows;
+using PasswordManagerSystem.Client.Views.Companies;
 
 namespace PasswordManagerSystem.Client.ViewModels.Companies;
 
@@ -29,17 +31,19 @@ public sealed partial class CompaniesViewModel : ObservableObject
     public ObservableCollection<CompanyResponse> Companies { get; } = new();
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSelectedCompany))]
-    [NotifyCanExecuteChangedFor(nameof(StartEditCommand))]
-    [NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
-    private CompanyResponse? _selectedCompany;
+	[NotifyPropertyChangedFor(nameof(HasSelectedCompany))]
+	[NotifyCanExecuteChangedFor(nameof(StartEditCommand))]
+	[NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
+	[NotifyCanExecuteChangedFor(nameof(DeactivateCompanyCommand))]
+	private CompanyResponse? _selectedCompany;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(StartCreateCommand))]
-    [NotifyCanExecuteChangedFor(nameof(StartEditCommand))]
-    [NotifyCanExecuteChangedFor(nameof(SaveCreateCommand))]
-    [NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
-    private bool _isLoading;
+	[NotifyCanExecuteChangedFor(nameof(StartCreateCommand))]
+	[NotifyCanExecuteChangedFor(nameof(StartEditCommand))]
+	[NotifyCanExecuteChangedFor(nameof(SaveCreateCommand))]
+	[NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
+	[NotifyCanExecuteChangedFor(nameof(DeactivateCompanyCommand))]
+	private bool _isLoading;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsReadOnlyMode))]
@@ -92,10 +96,12 @@ public sealed partial class CompaniesViewModel : ObservableObject
 
             Companies.Clear();
 
-            foreach (var company in companies.OrderBy(c => c.Name))
-            {
-                Companies.Add(company);
-            }
+            foreach (var company in companies
+				 .Where(c => c.IsActive)
+				 .OrderBy(c => c.Name))
+			{
+				Companies.Add(company);
+			}
 
             if (selectedCompanyId is not null)
             {
@@ -308,4 +314,77 @@ public sealed partial class CompaniesViewModel : ObservableObject
             IsLoading = false;
         }
     }
+	
+	private bool CanDeactivateCompany()
+	{
+		return !IsLoading &&
+			   !IsCreateMode &&
+			   !IsEditMode &&
+			   SelectedCompany is not null;
+	}
+
+	[RelayCommand(CanExecute = nameof(CanDeactivateCompany))]
+	private async Task DeactivateCompanyAsync()
+	{
+		if (SelectedCompany is null)
+		{
+			return;
+		}
+
+		var company = SelectedCompany;
+
+		var owner = Application.Current.Windows
+		.OfType<Window>()
+		.FirstOrDefault(x => x.IsActive)
+		?? Application.Current.MainWindow;
+
+		var confirmWindow = new DeactivateCompanyConfirmWindow(company.Name)
+		{
+			Owner = owner
+		};
+
+		var result = confirmWindow.ShowDialog();
+
+		if (result != true || !confirmWindow.IsConfirmed)
+		{
+			return;
+		}
+
+		IsLoading = true;
+		ErrorMessage = null;
+
+		try
+		{
+			var request = new UpdateCompanyRequest
+			{
+				Name = company.Name,
+				Description = company.Description,
+				IsActive = false
+			};
+
+			await _companiesService.UpdateAsync(company.Id, request);
+
+			SelectedCompany = null;
+
+			await LoadCompaniesAsync();
+
+			_toastService.ShowSuccess("Ceg elrejtve.");
+		}
+		catch (ApiException ex)
+		{
+			ErrorMessage = ex.Message;
+			_toastService.ShowError($"Ceg elrejtese sikertelen: {ex.Message}");
+			_logger.LogWarning(ex, "Company deactivate failed.");
+		}
+		catch (Exception ex)
+		{
+			ErrorMessage = ex.Message;
+			_toastService.ShowError($"Varatlan hiba: {ex.Message}");
+			_logger.LogError(ex, "Company deactivate unexpected error.");
+		}
+		finally
+		{
+			IsLoading = false;
+		}
+	}
 }

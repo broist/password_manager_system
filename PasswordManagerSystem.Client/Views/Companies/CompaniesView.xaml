@@ -323,9 +323,10 @@
 				</Grid.Style>
 
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="*"/>
+					<RowDefinition Height="Auto"/>
+				</Grid.RowDefinitions>
 
                 <Border Grid.Row="0"
 						Padding="30,24"
@@ -357,27 +358,50 @@
 										   VerticalAlignment="Center"/>
 							</StackPanel>
 						</StackPanel>
+						
+						<StackPanel Grid.Column="1"
+									Orientation="Horizontal"
+									VerticalAlignment="Top">
 
-						<Button Grid.Column="1"
-								Style="{StaticResource Button.Primary}"
-								Command="{Binding StartEditCommand}"
-								Padding="14,8"
-								VerticalAlignment="Top"
-								ToolTip="Cég szerkesztése">
-							<StackPanel Orientation="Horizontal">
-								<Path Data="{StaticResource Icon.Edit}"
-									  Stroke="{DynamicResource Brush.Text.OnAccent}"
-									  StrokeThickness="1.7"
-									  Width="14"
-									  Height="14"
-									  Stretch="Uniform"
-									  VerticalAlignment="Center"/>
-								<TextBlock Text="EDIT"
-										   Margin="8,0,0,0"
-										   VerticalAlignment="Center"
-										   Foreground="{DynamicResource Brush.Text.OnAccent}"/>
-							</StackPanel>
-						</Button>
+							<Button Style="{StaticResource Button.Primary}"
+									Command="{Binding StartEditCommand}"
+									Padding="14,8"
+									Margin="0,0,10,0"
+									ToolTip="Cég szerkesztése">
+								<StackPanel Orientation="Horizontal">
+									<Path Data="{StaticResource Icon.Edit}"
+										  Stroke="{DynamicResource Brush.Text.OnAccent}"
+										  StrokeThickness="1.7"
+										  Width="14"
+										  Height="14"
+										  Stretch="Uniform"
+										  VerticalAlignment="Center"/>
+									<TextBlock Text="EDIT"
+											   Margin="8,0,0,0"
+											   VerticalAlignment="Center"
+											   Foreground="{DynamicResource Brush.Text.OnAccent}"/>
+								</StackPanel>
+							</Button>
+
+							<Button Style="{StaticResource Button.Danger}"
+									Command="{Binding DeactivateCompanyCommand}"
+									Padding="14,8"
+									ToolTip="Cég elrejtése">
+								<StackPanel Orientation="Horizontal">
+									<Path Data="{StaticResource Icon.Trash}"
+										  Stroke="White"
+										  StrokeThickness="1.7"
+										  Width="14"
+										  Height="14"
+										  Stretch="Uniform"
+										  VerticalAlignment="Center"/>
+									<TextBlock Text="DELETE"
+											   Margin="8,0,0,0"
+											   VerticalAlignment="Center"
+											   Foreground="White"/>
+								</StackPanel>
+							</Button>
+						</StackPanel>
 					</Grid>
 				</Border>
 
