@@ -1,5 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Input;
+using Microsoft.Win32;
+using PasswordManagerSystem.Client.ViewModels.Credentials;
 
 namespace PasswordManagerSystem.Client.Views.Credentials;
 
@@ -87,4 +89,28 @@ public partial class CredentialEditorWindow : Window
 
         base.OnClosed(e);
     }
+	
+	private void BrowseConnectionFileButton_OnClick(object sender, RoutedEventArgs e)
+{
+    if (DataContext is not CredentialEditorViewModel viewModel)
+    {
+        return;
+    }
+
+    var dialog = new OpenFileDialog
+    {
+        Title = "Kapcsolodasi fajl kivalasztasa",
+        CheckFileExists = true,
+        CheckPathExists = true,
+        Multiselect = false,
+        Filter = "Minden fajl (*.*)|*.*|RDP fajlok (*.rdp)|*.rdp|Parancsikonok (*.lnk)|*.lnk"
+    };
+
+    var result = dialog.ShowDialog(this);
+
+    if (result == true)
+    {
+        viewModel.ConnectionValue = dialog.FileName;
+    }
+}
 }

@@ -227,4 +227,9 @@ public sealed class CredentialVisibilityOption
     public string Name { get; }
 
     public IReadOnlyList<long> VisibleRoleIds { get; }
+	
+	public override string ToString()
+	{
+		return Name;
+	}
 }

@@ -1,0 +1,438 @@
+<UserControl x:Class="PasswordManagerSystem.Client.Views.Companies.CompaniesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Background="{DynamicResource Brush.Surface.Panel}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="380"/>
+            <ColumnDefinition Width="1"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Companies list -->
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="24,22,20,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Cégek"
+                               Style="{StaticResource Text.Heading2}"/>
+                    <TextBlock Style="{StaticResource Text.Caption}"
+                               Margin="0,5,0,0">
+                        <Run Text="{Binding Companies.Count, Mode=OneWay}"/>
+                        <Run Text=" db partnercég"/>
+                    </TextBlock>
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Style="{StaticResource Button.Primary}"
+                        Command="{Binding StartCreateCommand}"
+                        Padding="14,8"
+                        VerticalAlignment="Center"
+                        ToolTip="Új cég létrehozása">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{StaticResource Icon.Plus}"
+                              Stroke="{DynamicResource Brush.Text.OnAccent}"
+                              StrokeThickness="2"
+                              Width="14"
+                              Height="14"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"/>
+                        <TextBlock Text="Új"
+                                   Margin="8,0,0,0"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource Brush.Text.OnAccent}"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <ListBox Grid.Row="1"
+                     Margin="14,0,14,16"
+                     ItemsSource="{Binding Companies}"
+                     SelectedItem="{Binding SelectedCompany, Mode=TwoWay}"
+                     IsEnabled="{Binding IsReadOnlyMode}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="4,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0"
+                                    Width="34"
+                                    Height="34"
+                                    CornerRadius="8"
+                                    Background="{DynamicResource Brush.Surface.Elevated}"
+                                    VerticalAlignment="Center">
+                                <Path Data="{StaticResource Icon.Building}"
+                                      Stroke="{DynamicResource Brush.Text.Secondary}"
+                                      StrokeThickness="1.5"
+                                      Width="17"
+                                      Height="17"
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1"
+										Margin="12,0,0,0"
+										VerticalAlignment="Center">
+								<TextBlock Text="{Binding Name}"
+										   Style="{StaticResource Text.Body}"
+										   FontWeight="SemiBold"
+										   TextTrimming="CharacterEllipsis"/>
+							</StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+
+        <Border Grid.Column="1"
+                Background="{DynamicResource Brush.Border.Subtle}"/>
+
+        <!-- Details / create panel -->
+        <Grid Grid.Column="2">
+
+            <!-- Empty state -->
+            <StackPanel Visibility="{Binding HasSelectedCompany, Converter={StaticResource InvBoolToVis}}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        MaxWidth="360">
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Visibility" Value="{Binding HasSelectedCompany, Converter={StaticResource InvBoolToVis}}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsCreateMode}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+
+                <TextBlock Text="Nincs kiválasztott cég"
+                           Style="{StaticResource Text.Heading3}"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Válassz ki egy céget a bal oldali listából, vagy hozz létre újat."
+                           Style="{StaticResource Text.Body}"
+                           Foreground="{DynamicResource Brush.Text.Secondary}"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           Margin="0,8,0,0"/>
+            </StackPanel>
+
+            <!-- Create mode -->
+            <Grid Visibility="{Binding IsCreateMode, Converter={StaticResource BoolToVis}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0"
+                        Padding="30,24"
+                        BorderBrush="{DynamicResource Brush.Border.Subtle}"
+                        BorderThickness="0,0,0,1">
+                    <StackPanel>
+                        <TextBlock Text="Új cég"
+                                   Style="{StaticResource Text.Heading2}"/>
+
+                        <StackPanel Orientation="Horizontal"
+                                    Margin="0,8,0,0">
+                            <Path Data="{StaticResource Icon.Building}"
+                                  Stroke="{DynamicResource Brush.Text.Tertiary}"
+                                  StrokeThickness="1.5"
+                                  Width="14"
+                                  Height="14"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"/>
+                            <TextBlock Text="Partnercég létrehozása"
+                                       Style="{StaticResource Text.BodySmall}"
+                                       Margin="7,0,0,0"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Grid.Row="1"
+                            Margin="30,24,30,24">
+
+                    <TextBlock Text="CÉGNÉV"
+                               Style="{StaticResource Text.Caption}"
+                               Margin="0,0,0,8"/>
+
+                    <TextBox Text="{Binding NewCompanyName, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="12,9"
+                             Margin="0,0,0,18"/>
+
+                    <TextBlock Text="LEÍRÁS"
+                               Style="{StaticResource Text.Caption}"
+                               Margin="0,0,0,8"/>
+
+                    <TextBox Text="{Binding NewCompanyDescription, UpdateSourceTrigger=PropertyChanged}"
+                             MinHeight="120"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto"
+                             Padding="12,9"
+                             Margin="0,0,0,18"/>
+
+                    <Border Padding="12,10"
+                            CornerRadius="6"
+                            Background="{DynamicResource Brush.Surface.Base}"
+                            BorderBrush="{DynamicResource Brush.Border.Subtle}"
+                            BorderThickness="1"
+                            Visibility="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToVis}}">
+                        <TextBlock Text="{Binding ErrorMessage}"
+                                   Foreground="{DynamicResource Brush.Danger}"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+                </StackPanel>
+
+                <Border Grid.Row="2"
+                        Padding="28,14"
+                        Background="{DynamicResource Brush.Surface.Sidebar}"
+                        BorderBrush="{DynamicResource Brush.Border.Subtle}"
+                        BorderThickness="0,1,0,0">
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right">
+                        <Button Content="Mégse"
+                                Style="{StaticResource Button.Secondary}"
+                                Command="{Binding CancelCreateCommand}"
+                                MinWidth="96"
+                                Margin="0,0,10,0"/>
+                        <Button Content="Mentés"
+                                Style="{StaticResource Button.Primary}"
+                                Command="{Binding SaveCreateCommand}"
+                                MinWidth="96"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+			
+			<!-- Edit mode -->
+			<Grid Visibility="{Binding IsEditMode, Converter={StaticResource BoolToVis}}">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto"/>
+					<RowDefinition Height="*"/>
+					<RowDefinition Height="Auto"/>
+				</Grid.RowDefinitions>
+
+				<Border Grid.Row="0"
+						Padding="30,24"
+						BorderBrush="{DynamicResource Brush.Border.Subtle}"
+						BorderThickness="0,0,0,1">
+					<StackPanel>
+						<TextBlock Text="Cég szerkesztése"
+								   Style="{StaticResource Text.Heading2}"/>
+
+						<StackPanel Orientation="Horizontal"
+									Margin="0,8,0,0">
+							<Path Data="{StaticResource Icon.Building}"
+								  Stroke="{DynamicResource Brush.Text.Tertiary}"
+								  StrokeThickness="1.5"
+								  Width="14"
+								  Height="14"
+								  Stretch="Uniform"
+								  VerticalAlignment="Center"/>
+							<TextBlock Text="Partnercég adatainak módosítása"
+									   Style="{StaticResource Text.BodySmall}"
+									   Margin="7,0,0,0"
+									   VerticalAlignment="Center"/>
+						</StackPanel>
+					</StackPanel>
+				</Border>
+
+				<StackPanel Grid.Row="1"
+							Margin="30,24,30,24">
+
+					<TextBlock Text="CÉGNÉV"
+							   Style="{StaticResource Text.Caption}"
+							   Margin="0,0,0,8"/>
+
+					<TextBox Text="{Binding EditCompanyName, UpdateSourceTrigger=PropertyChanged}"
+							 Padding="12,9"
+							 Margin="0,0,0,18"/>
+
+					<TextBlock Text="LEÍRÁS"
+							   Style="{StaticResource Text.Caption}"
+							   Margin="0,0,0,8"/>
+
+					<TextBox Text="{Binding EditCompanyDescription, UpdateSourceTrigger=PropertyChanged}"
+							 MinHeight="120"
+							 TextWrapping="Wrap"
+							 AcceptsReturn="True"
+							 VerticalScrollBarVisibility="Auto"
+							 Padding="12,9"
+							 Margin="0,0,0,18"/>
+
+					<Border Padding="12,10"
+							CornerRadius="6"
+							Background="{DynamicResource Brush.Surface.Base}"
+							BorderBrush="{DynamicResource Brush.Border.Subtle}"
+							BorderThickness="1"
+							Visibility="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToVis}}">
+						<TextBlock Text="{Binding ErrorMessage}"
+								   Foreground="{DynamicResource Brush.Danger}"
+								   TextWrapping="Wrap"/>
+					</Border>
+				</StackPanel>
+
+				<Border Grid.Row="2"
+						Padding="28,14"
+						Background="{DynamicResource Brush.Surface.Sidebar}"
+						BorderBrush="{DynamicResource Brush.Border.Subtle}"
+						BorderThickness="0,1,0,0">
+					<StackPanel Orientation="Horizontal"
+								HorizontalAlignment="Right">
+						<Button Content="Mégse"
+								Style="{StaticResource Button.Secondary}"
+								Command="{Binding CancelEditCommand}"
+								MinWidth="96"
+								Margin="0,0,10,0"/>
+						<Button Content="Mentés"
+								Style="{StaticResource Button.Primary}"
+								Command="{Binding SaveEditCommand}"
+								MinWidth="96"/>
+					</StackPanel>
+				</Border>
+			</Grid>
+
+            <!-- Readonly selected company detail -->
+			<Grid>
+				<Grid.Style>
+					<Style TargetType="Grid">
+						<Setter Property="Visibility" Value="{Binding HasSelectedCompany, Converter={StaticResource BoolToVis}}"/>
+						<Style.Triggers>
+							<DataTrigger Binding="{Binding IsCreateMode}" Value="True">
+								<Setter Property="Visibility" Value="Collapsed"/>
+							</DataTrigger>
+							<DataTrigger Binding="{Binding IsEditMode}" Value="True">
+								<Setter Property="Visibility" Value="Collapsed"/>
+							</DataTrigger>
+						</Style.Triggers>
+					</Style>
+				</Grid.Style>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0"
+						Padding="30,24"
+						BorderBrush="{DynamicResource Brush.Border.Subtle}"
+						BorderThickness="0,0,0,1">
+					<Grid>
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="*"/>
+							<ColumnDefinition Width="Auto"/>
+						</Grid.ColumnDefinitions>
+
+						<StackPanel Grid.Column="0">
+							<TextBlock Text="{Binding SelectedCompany.Name}"
+									   Style="{StaticResource Text.Heading2}"
+									   TextTrimming="CharacterEllipsis"/>
+
+							<StackPanel Orientation="Horizontal"
+										Margin="0,8,0,0">
+								<Path Data="{StaticResource Icon.Building}"
+									  Stroke="{DynamicResource Brush.Text.Tertiary}"
+									  StrokeThickness="1.5"
+									  Width="14"
+									  Height="14"
+									  Stretch="Uniform"
+									  VerticalAlignment="Center"/>
+								<TextBlock Text="Partnercég részletei"
+										   Style="{StaticResource Text.BodySmall}"
+										   Margin="7,0,0,0"
+										   VerticalAlignment="Center"/>
+							</StackPanel>
+						</StackPanel>
+
+						<Button Grid.Column="1"
+								Style="{StaticResource Button.Primary}"
+								Command="{Binding StartEditCommand}"
+								Padding="14,8"
+								VerticalAlignment="Top"
+								ToolTip="Cég szerkesztése">
+							<StackPanel Orientation="Horizontal">
+								<Path Data="{StaticResource Icon.Edit}"
+									  Stroke="{DynamicResource Brush.Text.OnAccent}"
+									  StrokeThickness="1.7"
+									  Width="14"
+									  Height="14"
+									  Stretch="Uniform"
+									  VerticalAlignment="Center"/>
+								<TextBlock Text="EDIT"
+										   Margin="8,0,0,0"
+										   VerticalAlignment="Center"
+										   Foreground="{DynamicResource Brush.Text.OnAccent}"/>
+							</StackPanel>
+						</Button>
+					</Grid>
+				</Border>
+
+                <StackPanel Grid.Row="1"
+                            Margin="30,24,30,24">
+
+                    <TextBlock Text="LEÍRÁS"
+                               Style="{StaticResource Text.Caption}"
+                               Margin="0,0,0,8"/>
+
+                    <Border CornerRadius="6"
+                            Background="{DynamicResource Brush.Surface.Elevated}"
+                            BorderBrush="{DynamicResource Brush.Border.Subtle}"
+                            BorderThickness="1"
+                            Padding="14,12"
+                            Margin="0,0,0,18">
+                        <TextBlock Text="{Binding SelectedCompany.Description, TargetNullValue=Nincs leírás}"
+                                   Style="{StaticResource Text.Body}"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+
+                    <TextBlock Text="METAADATOK"
+                               Style="{StaticResource Text.Caption}"
+                               Margin="0,0,0,8"/>
+
+                    <Border CornerRadius="6"
+                            Background="{DynamicResource Brush.Surface.Base}"
+                            BorderBrush="{DynamicResource Brush.Border.Subtle}"
+                            BorderThickness="1"
+                            Padding="14,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="LÉTREHOZVA"
+                                           Style="{StaticResource Text.Caption}"/>
+                                <TextBlock Text="{Binding SelectedCompany.CreatedAt, Converter={StaticResource ShortDateConv}}"
+                                           Style="{StaticResource Text.BodySmall}"
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="MÓDOSÍTVA"
+                                           Style="{StaticResource Text.Caption}"/>
+                                <TextBlock Text="{Binding SelectedCompany.UpdatedAt, Converter={StaticResource ShortDateConv}}"
+                                           Style="{StaticResource Text.BodySmall}"
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>
