@@ -6,6 +6,7 @@ public sealed class CredentialListItemResponse
     public long CompanyId { get; set; }
     public string CompanyName { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
+	public string CredentialType { get; set; } = "GENERIC";
     public string? ConnectionValue { get; set; }
     public string? Notes { get; set; }
     public bool IsActive { get; set; }
@@ -23,6 +24,7 @@ public sealed class CredentialDetailResponse
     public long CompanyId { get; set; }
     public string CompanyName { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
+	public string CredentialType { get; set; } = "GENERIC";
     public string? ConnectionValue { get; set; }
     public string? Notes { get; set; }
     public bool IsActive { get; set; }
@@ -37,6 +39,7 @@ public sealed class CreateCredentialRequest
 {
     public long CompanyId { get; set; }
     public string Title { get; set; } = string.Empty;
+	public string CredentialType { get; set; } = "GENERIC";
     public string Username { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string? ConnectionValue { get; set; }
@@ -46,6 +49,7 @@ public sealed class CreateCredentialRequest
 public sealed class UpdateCredentialRequest
 {
     public string Title { get; set; } = string.Empty;
+	public string CredentialType { get; set; } = "GENERIC";
     public string? Username { get; set; }
     public string? Password { get; set; }
     public string? ConnectionValue { get; set; }

@@ -73,7 +73,13 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Credential>(entity =>
         {
             entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.EncryptedUsername).HasColumnName("encrypted_username");
+			
+			entity.Property(e => e.CredentialType)
+				.HasColumnName("credential_type")
+				.HasMaxLength(50)
+				.IsRequired();
+				
+			entity.Property(e => e.EncryptedUsername).HasColumnName("encrypted_username");
             entity.Property(e => e.UsernameIv).HasColumnName("username_iv");
             entity.Property(e => e.UsernameTag).HasColumnName("username_tag");
             entity.Property(e => e.EncryptedPassword).HasColumnName("encrypted_password");

@@ -104,12 +104,16 @@ public sealed partial class CredentialListViewModel : ObservableObject
     private bool _isEditMode;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
-    private string _editTitle = string.Empty;
+	[NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
+	private string _editTitle = string.Empty;
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
-    private string _editUsername = string.Empty;
+	[ObservableProperty]
+	[NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
+	private string _editCredentialType = "GENERIC";
+
+	[ObservableProperty]
+	[NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
+	private string _editUsername = string.Empty;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
@@ -339,11 +343,14 @@ public sealed partial class CredentialListViewModel : ObservableObject
     }
 
     private static bool CredentialMatchesSearch(CredentialListItemResponse credential, string query)
-    {
-        return ContainsSearchText(credential.Title, query) ||
-               ContainsSearchText(credential.Notes, query) ||
-               ContainsSearchText(credential.ConnectionValue, query);
-    }
+	{
+		return ContainsSearchText(credential.Title, query) ||
+			   ContainsSearchText(credential.Notes, query) ||
+			   ContainsSearchText(credential.ConnectionValue, query) ||
+			   ContainsSearchText(credential.CredentialType, query) ||
+			   ContainsSearchText(GetCredentialTypeDisplayName(credential.CredentialType), query) ||
+			   ContainsSearchText(GetCredentialTypeShortName(credential.CredentialType), query);
+	}
 
     private static bool ContainsSearchText(string? value, string query)
     {
@@ -376,10 +383,11 @@ public sealed partial class CredentialListViewModel : ObservableObject
             var passwordResponse = await _credentialsService.RevealPasswordAsync(SelectedCredential.Id);
 
             EditTitle = SelectedCredential.Title;
-            EditUsername = usernameResponse?.Username ?? string.Empty;
-            EditPassword = passwordResponse?.Password ?? string.Empty;
-            EditConnectionValue = SelectedCredential.ConnectionValue;
-            EditNotes = SelectedCredential.Notes;
+			EditCredentialType = NormalizeCredentialType(SelectedCredential.CredentialType);
+			EditUsername = usernameResponse?.Username ?? string.Empty;
+			EditPassword = passwordResponse?.Password ?? string.Empty;
+			EditConnectionValue = SelectedCredential.ConnectionValue;
+			EditNotes = SelectedCredential.Notes;
 
             IsEditMode = true;
         }
@@ -428,18 +436,19 @@ public sealed partial class CredentialListViewModel : ObservableObject
         try
         {
             var request = new UpdateCredentialRequest
-            {
-                Title = EditTitle.Trim(),
-                Username = EditUsername.Trim(),
-                Password = EditPassword,
-                ConnectionValue = string.IsNullOrWhiteSpace(EditConnectionValue)
-                    ? null
-                    : EditConnectionValue.Trim(),
-                Notes = string.IsNullOrWhiteSpace(EditNotes)
-                    ? null
-                    : EditNotes.Trim(),
-                IsActive = true
-            };
+		{
+			Title = EditTitle.Trim(),
+			CredentialType = NormalizeCredentialType(EditCredentialType),
+			Username = EditUsername.Trim(),
+			Password = EditPassword,
+			ConnectionValue = string.IsNullOrWhiteSpace(EditConnectionValue)
+				? null
+				: EditConnectionValue.Trim(),
+			Notes = string.IsNullOrWhiteSpace(EditNotes)
+				? null
+				: EditNotes.Trim(),
+			IsActive = true
+		};
 
             await _credentialsService.UpdateAsync(editedCredentialId, request);
 
@@ -486,10 +495,11 @@ public sealed partial class CredentialListViewModel : ObservableObject
         IsEditMode = false;
         EditErrorMessage = null;
         EditTitle = string.Empty;
-        EditUsername = string.Empty;
-        EditPassword = string.Empty;
-        EditConnectionValue = null;
-        EditNotes = null;
+		EditCredentialType = "GENERIC";
+		EditUsername = string.Empty;
+		EditPassword = string.Empty;
+		EditConnectionValue = null;
+		EditNotes = null;
     }
 
     private bool CanDeleteCredential()
@@ -785,4 +795,40 @@ public sealed partial class CredentialListViewModel : ObservableObject
             }
         }, token);
     }
+	
+	public static string GetCredentialTypeDisplayName(string? credentialType)
+	{
+		return NormalizeCredentialType(credentialType) switch
+		{
+			"DATABASE" => "Adatbazis",
+			"WINDOWS_SERVER" => "Windows szerver",
+			"LINUX_SERVER" => "Linux szerver",
+			_ => "Altalanos"
+		};
+	}
+
+	public static string GetCredentialTypeShortName(string? credentialType)
+	{
+		return NormalizeCredentialType(credentialType) switch
+		{
+			"DATABASE" => "DB",
+			"WINDOWS_SERVER" => "WIN",
+			"LINUX_SERVER" => "LNX",
+			_ => "ALT"
+		};
+	}
+
+	private static string NormalizeCredentialType(string? credentialType)
+	{
+		var normalized = credentialType?.Trim().ToUpperInvariant();
+
+		return normalized switch
+		{
+			"DATABASE" => "DATABASE",
+			"WINDOWS_SERVER" => "WINDOWS_SERVER",
+			"LINUX_SERVER" => "LINUX_SERVER",
+			"GENERIC" => "GENERIC",
+			_ => "GENERIC"
+		};
+	}
 }

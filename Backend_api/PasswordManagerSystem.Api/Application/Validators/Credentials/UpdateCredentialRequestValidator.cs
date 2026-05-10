@@ -12,6 +12,12 @@ public class UpdateCredentialRequestValidator : AbstractValidator<UpdateCredenti
             .WithMessage("Credential title is required.")
             .MaximumLength(200)
             .WithMessage("Credential title must not exceed 200 characters.");
+			
+		RuleFor(x => x.CredentialType)
+			.NotEmpty()
+			.WithMessage("Credential type is required.")
+			.Must(BeValidCredentialType)
+			.WithMessage("Invalid credential type.");
 
         RuleFor(x => x.Username)
             .MaximumLength(500)
@@ -31,4 +37,13 @@ public class UpdateCredentialRequestValidator : AbstractValidator<UpdateCredenti
             .MaximumLength(4000)
             .WithMessage("Notes must not exceed 4000 characters.");
     }
+	
+	private static bool BeValidCredentialType(string credentialType)
+{
+    return credentialType is
+        "GENERIC" or
+        "DATABASE" or
+        "WINDOWS_SERVER" or
+        "LINUX_SERVER";
+}
 }

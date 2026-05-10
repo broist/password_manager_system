@@ -1,0 +1,3 @@
+ALTER TABLE credentials
+ADD COLUMN credential_type VARCHAR(50) NOT NULL DEFAULT 'GENERIC'
+AFTER title;

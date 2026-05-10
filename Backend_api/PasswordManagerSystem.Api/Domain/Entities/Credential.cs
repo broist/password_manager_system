@@ -9,6 +9,8 @@ public class Credential
     public Company Company { get; set; } = null!;
 
     public string Title { get; set; } = string.Empty;
+	
+	public string CredentialType { get; set; } = "GENERIC";
 
     public byte[]? EncryptedUsername { get; set; }
 

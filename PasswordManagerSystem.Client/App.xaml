@@ -25,8 +25,10 @@
             <conv:StringNotEmptyToVisibilityConverter x:Key="StringNotEmptyToVis"/>
             <conv:NotNullToVisibilityConverter x:Key="NotNullToVis"/>
             <conv:ConnectionTypeConverter x:Key="ConnTypeConv"/>
-            <conv:ShortDateTimeConverter x:Key="ShortDateConv"/>
-            <conv:InitialsConverter x:Key="InitialsConv"/>
+			<conv:CredentialTypeDisplayNameConverter x:Key="CredentialTypeDisplayNameConv"/>
+			<conv:CredentialTypeShortNameConverter x:Key="CredentialTypeShortNameConv"/>
+			<conv:ShortDateTimeConverter x:Key="ShortDateConv"/>
+			<conv:InitialsConverter x:Key="InitialsConv"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

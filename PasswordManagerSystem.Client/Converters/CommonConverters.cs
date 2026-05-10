@@ -127,3 +127,65 @@ public sealed class InitialsConverter : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotSupportedException();
 }
+
+public sealed class CredentialTypeDisplayNameConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        return Normalize(value as string) switch
+        {
+            "DATABASE" => "Adatbazis",
+            "WINDOWS_SERVER" => "Windows szerver",
+            "LINUX_SERVER" => "Linux szerver",
+            _ => "Altalanos"
+        };
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+
+    private static string Normalize(string? credentialType)
+    {
+        var normalized = credentialType?.Trim().ToUpperInvariant();
+
+        return normalized switch
+        {
+            "DATABASE" => "DATABASE",
+            "WINDOWS_SERVER" => "WINDOWS_SERVER",
+            "LINUX_SERVER" => "LINUX_SERVER",
+            "GENERIC" => "GENERIC",
+            _ => "GENERIC"
+        };
+    }
+}
+
+public sealed class CredentialTypeShortNameConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        return Normalize(value as string) switch
+        {
+            "DATABASE" => "DB",
+            "WINDOWS_SERVER" => "WIN",
+            "LINUX_SERVER" => "LNX",
+            _ => "ALT"
+        };
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+
+    private static string Normalize(string? credentialType)
+    {
+        var normalized = credentialType?.Trim().ToUpperInvariant();
+
+        return normalized switch
+        {
+            "DATABASE" => "DATABASE",
+            "WINDOWS_SERVER" => "WINDOWS_SERVER",
+            "LINUX_SERVER" => "LINUX_SERVER",
+            "GENERIC" => "GENERIC",
+            _ => "GENERIC"
+        };
+    }
+}

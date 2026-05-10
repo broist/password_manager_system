@@ -9,6 +9,8 @@ public class CredentialListItemResponse
     public string CompanyName { get; set; } = string.Empty;
 
     public string Title { get; set; } = string.Empty;
+	
+	public string CredentialType { get; set; } = "GENERIC";
 
     public string? ConnectionValue { get; set; }
 
@@ -38,6 +40,8 @@ public class CredentialDetailResponse
     public string CompanyName { get; set; } = string.Empty;
 
     public string Title { get; set; } = string.Empty;
+	
+	public string CredentialType { get; set; } = "GENERIC";
 
     public string? ConnectionValue { get; set; }
 
@@ -61,6 +65,8 @@ public class CreateCredentialRequest
     public long CompanyId { get; set; }
 
     public string Title { get; set; } = string.Empty;
+	
+	public string CredentialType { get; set; } = "GENERIC";
 
     public string Username { get; set; } = string.Empty;
 
@@ -74,6 +80,8 @@ public class CreateCredentialRequest
 public class UpdateCredentialRequest
 {
     public string Title { get; set; } = string.Empty;
+	
+	public string CredentialType { get; set; } = "GENERIC";
 
     public string? Username { get; set; }
 

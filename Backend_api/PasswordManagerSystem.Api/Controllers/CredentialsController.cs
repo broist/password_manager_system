@@ -94,6 +94,7 @@ public class CredentialsController : ControllerBase
 				CompanyId = credential.CompanyId,
 				CompanyName = credential.Company.Name,
 				Title = credential.Title,
+				CredentialType = credential.CredentialType,
 				ConnectionValue = credential.ConnectionValue,
 				Notes = credential.Notes,
 				IsActive = credential.IsActive,
@@ -141,6 +142,7 @@ public class CredentialsController : ControllerBase
         {
             CompanyId = company.Id,
             Title = request.Title.Trim(),
+			CredentialType = NormalizeCredentialType(request.CredentialType),
 
             EncryptedUsername = encryptedUsername.CipherText,
             UsernameIv = encryptedUsername.Iv,
@@ -208,6 +210,7 @@ public class CredentialsController : ControllerBase
             CompanyId = credential.CompanyId,
             CompanyName = company.Name,
             Title = credential.Title,
+			CredentialType = credential.CredentialType,
             ConnectionValue = credential.ConnectionValue,
             Notes = credential.Notes,
             IsActive = credential.IsActive,
@@ -266,6 +269,7 @@ public class CredentialsController : ControllerBase
         }
 
         credential.Title = request.Title.Trim();
+		credential.CredentialType = NormalizeCredentialType(request.CredentialType);
         credential.ConnectionValue = request.ConnectionValue?.Trim();
         credential.Notes = request.Notes?.Trim();
         credential.IsActive = request.IsActive;
@@ -310,6 +314,7 @@ public class CredentialsController : ControllerBase
             CompanyId = credential.CompanyId,
             CompanyName = credential.Company.Name,
             Title = credential.Title,
+			CredentialType = credential.CredentialType,
             ConnectionValue = credential.ConnectionValue,
             Notes = credential.Notes,
             IsActive = credential.IsActive,
@@ -489,6 +494,7 @@ public class CredentialsController : ControllerBase
         {
             credentialId = credential.Id,
             title = credential.Title,
+			CredentialType = credential.CredentialType,
             username
         });
     }
@@ -561,6 +567,7 @@ public class CredentialsController : ControllerBase
         {
             credentialId = credential.Id,
             title = credential.Title,
+			CredentialType = credential.CredentialType,
             password
         });
     }
@@ -616,4 +623,18 @@ public class CredentialsController : ControllerBase
             StringComparison.OrdinalIgnoreCase
         );
     }
+	
+	private static string NormalizeCredentialType(string? credentialType)
+	{
+		var normalized = credentialType?.Trim().ToUpperInvariant();
+
+		return normalized switch
+		{
+			"DATABASE" => "DATABASE",
+			"WINDOWS_SERVER" => "WINDOWS_SERVER",
+			"LINUX_SERVER" => "LINUX_SERVER",
+			"GENERIC" => "GENERIC",
+			_ => "GENERIC"
+		};
+	}
 }

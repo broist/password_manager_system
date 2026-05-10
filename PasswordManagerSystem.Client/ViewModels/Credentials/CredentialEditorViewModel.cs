@@ -8,6 +8,18 @@ using PasswordManagerSystem.Client.Services.Api;
 
 namespace PasswordManagerSystem.Client.ViewModels.Credentials;
 
+public sealed record CredentialTypeOption(
+    string Value,
+    string DisplayName,
+    string ShortName
+)
+{
+    public override string ToString()
+    {
+        return DisplayName;
+    }
+}
+
 public sealed partial class CredentialEditorViewModel : ObservableObject
 {
     private readonly ICredentialsService _credentialsService;
@@ -28,12 +40,19 @@ public sealed partial class CredentialEditorViewModel : ObservableObject
         CompanyId = companyId;
         CompanyName = companyName;
 
-        VisibilityOptions.Add(new CredentialVisibilityOption("ITAdmin", new[] { 1L }));
-        VisibilityOptions.Add(new CredentialVisibilityOption("IT", new[] { 1L, 2L }));
-        VisibilityOptions.Add(new CredentialVisibilityOption("Consultant", new[] { 1L, 2L, 3L }));
-        VisibilityOptions.Add(new CredentialVisibilityOption("Support", new[] { 1L, 2L, 3L, 4L }));
+        CredentialTypeOptions.Add(new CredentialTypeOption("GENERIC", "Altalanos", "ALT"));
+		CredentialTypeOptions.Add(new CredentialTypeOption("DATABASE", "Adatbazis", "DB"));
+		CredentialTypeOptions.Add(new CredentialTypeOption("WINDOWS_SERVER", "Windows szerver", "WIN"));
+		CredentialTypeOptions.Add(new CredentialTypeOption("LINUX_SERVER", "Linux szerver", "LNX"));
 
-        SelectedVisibilityOption = VisibilityOptions.FirstOrDefault(x => x.Name == "IT");
+		SelectedCredentialTypeOption = CredentialTypeOptions.FirstOrDefault(x => x.Value == "GENERIC");
+
+		VisibilityOptions.Add(new CredentialVisibilityOption("ITAdmin", new[] { 1L }));
+		VisibilityOptions.Add(new CredentialVisibilityOption("IT", new[] { 1L, 2L }));
+		VisibilityOptions.Add(new CredentialVisibilityOption("Consultant", new[] { 1L, 2L, 3L }));
+		VisibilityOptions.Add(new CredentialVisibilityOption("Support", new[] { 1L, 2L, 3L, 4L }));
+
+		SelectedVisibilityOption = VisibilityOptions.FirstOrDefault(x => x.Name == "IT");
     }
 
     public event EventHandler<bool>? CloseRequested;
@@ -45,10 +64,16 @@ public sealed partial class CredentialEditorViewModel : ObservableObject
     public string CompanyName { get; }
 
     public ObservableCollection<CredentialVisibilityOption> VisibilityOptions { get; } = new();
+	
+	public ObservableCollection<CredentialTypeOption> CredentialTypeOptions { get; } = new();
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private CredentialVisibilityOption? _selectedVisibilityOption;
+	
+	[ObservableProperty]
+	[NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+	private CredentialTypeOption? _selectedCredentialTypeOption;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
@@ -83,11 +108,12 @@ public sealed partial class CredentialEditorViewModel : ObservableObject
     private bool CanSave()
     {
         return !IsSaving &&
-               CompanyId > 0 &&
-               SelectedVisibilityOption is not null &&
-               !string.IsNullOrWhiteSpace(Title) &&
-               !string.IsNullOrWhiteSpace(Username) &&
-               !string.IsNullOrWhiteSpace(Password);
+			   CompanyId > 0 &&
+			   SelectedVisibilityOption is not null &&
+			   SelectedCredentialTypeOption is not null &&
+			   !string.IsNullOrWhiteSpace(Title) &&
+			   !string.IsNullOrWhiteSpace(Username) &&
+			   !string.IsNullOrWhiteSpace(Password);
     }
 
     [RelayCommand(CanExecute = nameof(CanSave))]
@@ -100,11 +126,12 @@ public sealed partial class CredentialEditorViewModel : ObservableObject
         try
         {
             var request = new CreateCredentialRequest
-            {
-                CompanyId = CompanyId,
-                Title = Title.Trim(),
-                Username = Username.Trim(),
-                Password = Password,
+			{
+				CompanyId = CompanyId,
+				Title = Title.Trim(),
+				CredentialType = SelectedCredentialTypeOption?.Value ?? "GENERIC",
+				Username = Username.Trim(),
+				Password = Password,
                 ConnectionValue = string.IsNullOrWhiteSpace(ConnectionValue)
                     ? null
                     : ConnectionValue.Trim(),
