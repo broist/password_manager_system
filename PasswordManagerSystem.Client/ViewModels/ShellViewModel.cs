@@ -93,7 +93,7 @@ public sealed partial class ShellViewModel : ObservableObject
 			NavigationItems.Add(new NavItem("Audit napló", "Icon.Activity", typeof(AuditViewModel)));
 		}
 
-		NavigationItems.Add(new NavItem("Beállítások", "Icon.Settings", null) { IsPlaceholder = true });
+		// NavigationItems.Add(new NavItem("Beállítások", "Icon.Settings", null) { IsPlaceholder = true });
 	}
 
     partial void OnSelectedNavItemChanged(NavItem? value)

@@ -25,6 +25,8 @@ public sealed partial class AccessViewModel : ObservableObject
     private readonly ILogger<AccessViewModel> _logger;
 
     private readonly List<CredentialListItemResponse> _allVisibleCredentials = new();
+	
+	private bool _suppressSelectedCompanyChanged;
 
     public AccessViewModel(
         ICompaniesService companiesService,
@@ -89,9 +91,14 @@ public sealed partial class AccessViewModel : ObservableObject
     public bool IsDelegatedItMode => _sessionService.IsIt && !_sessionService.IsItAdmin;
 
     partial void OnSelectedCompanyChanged(CompanyResponse? value)
-    {
-        _ = ApplyCompanyCredentialFilterAsync(value?.Id);
-    }
+	{
+		if (_suppressSelectedCompanyChanged)
+		{
+			return;
+		}
+
+		_ = ApplyCompanyCredentialFilterAsync(value?.Id);
+	}
 
     partial void OnSelectedCredentialChanged(CredentialListItemResponse? value)
     {
@@ -142,19 +149,24 @@ public sealed partial class AccessViewModel : ObservableObject
     }
 
     private async Task LoadCredentialsInternalAsync()
-    {
-        var credentials = await _credentialsService.GetAllAsync(null);
+	{
+		var credentials = await _credentialsService.GetAllAsync(null);
 
-        _allVisibleCredentials.Clear();
+		_allVisibleCredentials.Clear();
 
-        foreach (var credential in credentials
-                     .Where(x => x.IsActive)
-                     .OrderBy(x => x.CompanyName)
-                     .ThenBy(x => x.Title))
-        {
-            _allVisibleCredentials.Add(credential);
-        }
-    }
+		var uniqueCredentials = credentials
+			.Where(x => x.IsActive)
+			.GroupBy(x => x.Id)
+			.Select(x => x.First())
+			.OrderBy(x => x.CompanyName)
+			.ThenBy(x => x.Title)
+			.ToList();
+
+		foreach (var credential in uniqueCredentials)
+		{
+			_allVisibleCredentials.Add(credential);
+		}
+	}
 
     private async Task ApplyCompanyCredentialFilterAsync(long? companyId)
     {
@@ -213,47 +225,56 @@ public sealed partial class AccessViewModel : ObservableObject
     }
 
     [RelayCommand(CanExecute = nameof(CanRefreshAccessView))]
-    private async Task RefreshAccessViewAsync()
-    {
-        IsLoading = true;
-        ErrorMessage = null;
+	private async Task RefreshAccessViewAsync()
+	{
+		IsLoading = true;
+		ErrorMessage = null;
 
-        try
-        {
-            var selectedCompanyId = SelectedCompany?.Id;
+		try
+		{
+			var selectedCompanyId = SelectedCompany?.Id;
 
-            await LoadCompaniesInternalAsync();
-            await LoadCredentialsInternalAsync();
+			await LoadCompaniesInternalAsync();
+			await LoadCredentialsInternalAsync();
 
-            if (selectedCompanyId.HasValue)
-            {
-                SelectedCompany = Companies.FirstOrDefault(x => x.Id == selectedCompanyId.Value);
-            }
-            else
-            {
-                SelectedCompany ??= Companies.FirstOrDefault();
-            }
+			_suppressSelectedCompanyChanged = true;
 
-            await ApplyCompanyCredentialFilterAsync(SelectedCompany?.Id);
+			try
+			{
+				if (selectedCompanyId.HasValue)
+				{
+					SelectedCompany = Companies.FirstOrDefault(x => x.Id == selectedCompanyId.Value);
+				}
+				else
+				{
+					SelectedCompany = Companies.FirstOrDefault();
+				}
+			}
+			finally
+			{
+				_suppressSelectedCompanyChanged = false;
+			}
 
-            _toastService.ShowSuccess("Hozzáférési nézet frissítve.");
-        }
-        catch (ApiException ex)
-        {
-            HandleApiException(ex, "Hozzáférési nézet frissítése sikertelen.");
-            _logger.LogWarning(ex, "Access view refresh failed.");
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = ex.Message;
-            _toastService.ShowError($"Váratlan hiba: {ex.Message}");
-            _logger.LogError(ex, "Access view refresh unexpected error.");
-        }
-        finally
-        {
-            IsLoading = false;
-        }
-    }
+			await ApplyCompanyCredentialFilterAsync(SelectedCompany?.Id);
+
+			_toastService.ShowSuccess("Hozzáférési nézet frissítve.");
+		}
+		catch (ApiException ex)
+		{
+			HandleApiException(ex, "Hozzáférési nézet frissítése sikertelen.");
+			_logger.LogWarning(ex, "Access view refresh failed.");
+		}
+		catch (Exception ex)
+		{
+			ErrorMessage = ex.Message;
+			_toastService.ShowError($"Váratlan hiba: {ex.Message}");
+			_logger.LogError(ex, "Access view refresh unexpected error.");
+		}
+		finally
+		{
+			IsLoading = false;
+		}
+	}
 
     private async Task ReloadAccessRulesForItemAsync(AccessCredentialItemViewModel item)
     {

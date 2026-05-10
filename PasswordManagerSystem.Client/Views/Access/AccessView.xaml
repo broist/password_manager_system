@@ -112,7 +112,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Companies -->
+        <!-- Customers -->
         <Grid Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -126,7 +126,7 @@
                     <TextBlock Style="{StaticResource Text.Caption}"
                                Margin="0,5,0,0">
                         <Run Text="{Binding Companies.Count, Mode=OneWay}"/>
-                        <Run Text=" db aktív cég"/>
+                        <Run Text=" db aktív ügyfél"/>
                     </TextBlock>
                 </StackPanel>
             </Grid>
@@ -176,16 +176,16 @@
         <Border Grid.Column="1"
                 Background="{DynamicResource Brush.Border.Subtle}"/>
 
-        <!-- Company credential access overview -->
+        <!-- Customer credential access overview -->
         <Grid Grid.Column="2">
             <StackPanel Visibility="{Binding HasSelectedCompany, Converter={StaticResource InvBoolToVis}}"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         MaxWidth="380">
-                <TextBlock Text="Nincs kiválasztott cég"
+                <TextBlock Text="Nincs kiválasztott ügyfél"
                            Style="{StaticResource Text.Heading3}"
                            HorizontalAlignment="Center"/>
-                <TextBlock Text="Válassz ki egy céget a bal oldali listából."
+                <TextBlock Text="Válassz ki egy ügyfelet a bal oldali listából."
                            Style="{StaticResource Text.Body}"
                            Foreground="{DynamicResource Brush.Text.Secondary}"
                            TextWrapping="Wrap"
@@ -460,6 +460,11 @@
                                                                    Style="{StaticResource Text.BodySmall}"
                                                                    FontWeight="SemiBold"
                                                                    TextTrimming="CharacterEllipsis"/>
+
+                                                        <TextBlock Text="{Binding CredentialId, StringFormat=credential_id: {0}}"
+                                                                   Style="{StaticResource Text.Caption}"
+                                                                   Foreground="{DynamicResource Brush.Text.Tertiary}"
+                                                                   Margin="0,3,0,0"/>
 
                                                         <TextBlock Text="{Binding CompanyName}"
                                                                    Style="{StaticResource Text.Caption}"
