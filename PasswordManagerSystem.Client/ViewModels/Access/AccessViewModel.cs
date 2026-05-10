@@ -64,6 +64,9 @@ public sealed partial class AccessViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(GrantTemporaryAccessCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RevokeAccessCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SetRoleAccessCommand))]
+	[NotifyCanExecuteChangedFor(nameof(RefreshAccessViewCommand))]
     private bool _isLoading;
 
     [ObservableProperty]
@@ -75,7 +78,7 @@ public sealed partial class AccessViewModel : ObservableObject
 
     public bool CanManageAccessRules => _sessionService.IsItAdmin || _sessionService.IsIt;
 
-    public bool CanManageRoleAccess => _sessionService.IsItAdmin || _sessionService.IsIt;
+    public bool CanManageRoleAccess => _sessionService.IsItAdmin;
 
     public bool CanManageUserAccess => _sessionService.IsItAdmin || _sessionService.IsIt;
 
@@ -203,6 +206,54 @@ public sealed partial class AccessViewModel : ObservableObject
             IsLoading = false;
         }
     }
+	
+	    private bool CanRefreshAccessView()
+    {
+        return !IsLoading;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRefreshAccessView))]
+    private async Task RefreshAccessViewAsync()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var selectedCompanyId = SelectedCompany?.Id;
+
+            await LoadCompaniesInternalAsync();
+            await LoadCredentialsInternalAsync();
+
+            if (selectedCompanyId.HasValue)
+            {
+                SelectedCompany = Companies.FirstOrDefault(x => x.Id == selectedCompanyId.Value);
+            }
+            else
+            {
+                SelectedCompany ??= Companies.FirstOrDefault();
+            }
+
+            await ApplyCompanyCredentialFilterAsync(SelectedCompany?.Id);
+
+            _toastService.ShowSuccess("Hozzáférési nézet frissítve.");
+        }
+        catch (ApiException ex)
+        {
+            HandleApiException(ex, "Hozzáférési nézet frissítése sikertelen.");
+            _logger.LogWarning(ex, "Access view refresh failed.");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            _toastService.ShowError($"Váratlan hiba: {ex.Message}");
+            _logger.LogError(ex, "Access view refresh unexpected error.");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
 
     private async Task ReloadAccessRulesForItemAsync(AccessCredentialItemViewModel item)
     {
@@ -320,6 +371,11 @@ public sealed partial class AccessViewModel : ObservableObject
 
             await ReloadAccessRulesForItemAsync(item);
 
+            if (SelectedCredential?.Id == item.CredentialId)
+            {
+                await LoadAccessRulesAsync(item.CredentialId);
+            }
+
             _toastService.ShowSuccess("Alkalmi hozzáférés létrehozva.");
         }
         catch (ApiException ex)
@@ -337,6 +393,177 @@ public sealed partial class AccessViewModel : ObservableObject
         {
             IsLoading = false;
         }
+    }
+
+    private bool CanRevokeAccess(CredentialAccessResponse? rule)
+    {
+        return !IsLoading &&
+               CanManageAccessRules &&
+               rule is not null;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRevokeAccess))]
+    private async Task RevokeAccessAsync(CredentialAccessResponse? rule)
+    {
+        if (rule is null)
+        {
+            return;
+        }
+
+        var owner = Application.Current.Windows
+            .OfType<Window>()
+            .FirstOrDefault(x => x.IsActive)
+            ?? Application.Current.MainWindow;
+
+        var result = MessageBox.Show(
+            owner,
+            "Biztosan visszavonod ezt a hozzáférést?",
+            "Hozzáférés visszavonása",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (result != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        IsLoading = true;
+        ErrorMessage = null;
+
+        try
+        {
+            await _credentialAccessApiService.DeleteAsync(rule.Id);
+
+            if (SelectedCredential is not null)
+            {
+                await LoadAccessRulesAsync(SelectedCredential.Id);
+
+                var item = CredentialItems.FirstOrDefault(x => x.CredentialId == SelectedCredential.Id);
+                if (item is not null)
+                {
+                    await ReloadAccessRulesForItemAsync(item);
+                }
+            }
+
+            _toastService.ShowSuccess("Hozzáférés visszavonva.");
+        }
+        catch (ApiException ex)
+        {
+            HandleApiException(ex, "Hozzáférés visszavonása sikertelen.");
+            _logger.LogWarning(ex, "Access rule revoke failed.");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            _toastService.ShowError($"Váratlan hiba: {ex.Message}");
+            _logger.LogError(ex, "Access rule revoke unexpected error.");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task SetRoleAccessAsync(AccessCredentialItemViewModel? item)
+    {
+        if (IsLoading || !CanManageRoleAccess)
+        {
+            return;
+        }
+
+        if (item?.SelectedRoleAccessOption is null)
+        {
+            _toastService.ShowWarning("Válassz ki egy szerepkört.");
+            return;
+        }
+
+        IsLoading = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var selectedOption = item.SelectedRoleAccessOption;
+
+            var existingRoleRules = item.AccessRules
+                .Where(x =>
+                    x.RoleId.HasValue &&
+                    !x.UserId.HasValue)
+                .ToList();
+
+            foreach (var rule in existingRoleRules)
+            {
+                await _credentialAccessApiService.DeleteAsync(rule.Id);
+            }
+
+            foreach (var roleId in selectedOption.RoleIds)
+            {
+                var request = new CreateCredentialAccessRequest
+                {
+                    CredentialId = item.CredentialId,
+                    RoleId = roleId,
+                    UserId = null,
+                    CanView = true,
+                    CanWrite = false,
+                    CanDelete = false,
+                    ExpiresAt = null
+                };
+
+                await _credentialAccessApiService.CreateAsync(request);
+            }
+
+            await ReloadAccessRulesForItemAsync(item);
+
+            if (SelectedCredential?.Id == item.CredentialId)
+            {
+                await LoadAccessRulesAsync(item.CredentialId);
+            }
+
+            _toastService.ShowSuccess($"Szerepkör-alapú hozzáférés beállítva: {selectedOption.DisplayName}.");
+        }
+        catch (ApiException ex)
+        {
+            HandleApiException(ex, "Szerepkör-alapú hozzáférés beállítása sikertelen.");
+            _logger.LogWarning(ex, "Role-based access set failed.");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            _toastService.ShowError($"Váratlan hiba: {ex.Message}");
+            _logger.LogError(ex, "Role-based access set unexpected error.");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+	
+	    [RelayCommand]
+    private void SortByType()
+    {
+        var sortedItems = CredentialItems
+            .OrderBy(x => GetCredentialTypeRank(x.Credential.CredentialType))
+            .ThenBy(x => x.Title)
+            .ToList();
+
+        CredentialItems.Clear();
+
+        foreach (var item in sortedItems)
+        {
+            CredentialItems.Add(item);
+        }
+    }
+
+    private static int GetCredentialTypeRank(string? credentialType)
+    {
+        return credentialType?.Trim().ToUpperInvariant() switch
+        {
+            "DATABASE" => 1,
+            "WINDOWS_SERVER" => 2,
+            "LINUX_SERVER" => 3,
+            "GENERIC" => 4,
+            _ => 999
+        };
     }
 
     private void HandleApiException(ApiException ex, string messagePrefix)
@@ -364,6 +591,26 @@ public sealed partial class AccessCredentialItemViewModel : ObservableObject
     public AccessCredentialItemViewModel(CredentialListItemResponse credential)
     {
         Credential = credential;
+
+        RoleAccessOptions.Add(new RoleAccessOption(
+            "ITAdmin",
+            "ITAdmin",
+            new[] { 1L }));
+
+        RoleAccessOptions.Add(new RoleAccessOption(
+            "IT",
+            "IT",
+            new[] { 1L, 2L }));
+
+        RoleAccessOptions.Add(new RoleAccessOption(
+            "Consultant",
+            "Consultant",
+            new[] { 1L, 2L, 3L }));
+
+        RoleAccessOptions.Add(new RoleAccessOption(
+            "Support",
+            "Support",
+            new[] { 1L, 2L, 3L, 4L }));
     }
 
     public CredentialListItemResponse Credential { get; }
@@ -371,6 +618,11 @@ public sealed partial class AccessCredentialItemViewModel : ObservableObject
     public ObservableCollection<CredentialAccessResponse> AccessRules { get; } = new();
 
     public ObservableCollection<CredentialAccessResponse> TemporaryAccessRules { get; } = new();
+
+    public ObservableCollection<RoleAccessOption> RoleAccessOptions { get; } = new();
+
+    [ObservableProperty]
+    private RoleAccessOption? _selectedRoleAccessOption;
 
     public long CredentialId => Credential.Id;
 
@@ -399,15 +651,15 @@ public sealed partial class AccessCredentialItemViewModel : ObservableObject
                 .ToList();
 
             if (activeRoleRules.Count == 0)
-            {
-                return "Nincs szerepkör-alapú hozzáférés";
-            }
+				{
+					return string.Empty;
+				}
 
-            var minimumRole = activeRoleRules
-                .OrderBy(GetRoleRank)
-                .First();
+				var minimumRole = activeRoleRules
+					.OrderBy(GetRoleRank)
+					.First();
 
-            return $"Minimum szerepkör: {minimumRole}";
+				return minimumRole;
         }
     }
 
@@ -420,6 +672,8 @@ public sealed partial class AccessCredentialItemViewModel : ObservableObject
             TemporaryAccessRules.Add(rule);
         }
 
+        UpdateSelectedRoleAccessOption();
+
         OnPropertyChanged(nameof(HasTemporaryAccessRules));
         OnPropertyChanged(nameof(RoleAccessSummary));
     }
@@ -428,9 +682,33 @@ public sealed partial class AccessCredentialItemViewModel : ObservableObject
     {
         AccessRules.Clear();
         TemporaryAccessRules.Clear();
+        SelectedRoleAccessOption = null;
 
         OnPropertyChanged(nameof(HasTemporaryAccessRules));
         OnPropertyChanged(nameof(RoleAccessSummary));
+    }
+
+    private void UpdateSelectedRoleAccessOption()
+    {
+        var activeRoleIds = AccessRules
+            .Where(x =>
+                x.RoleId.HasValue &&
+                x.CanView &&
+                !IsExpired(x))
+            .Select(x => x.RoleId!.Value)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+
+        if (activeRoleIds.Count == 0)
+        {
+            SelectedRoleAccessOption = null;
+            return;
+        }
+
+        SelectedRoleAccessOption = RoleAccessOptions
+            .OrderByDescending(x => x.RoleIds.Count)
+            .FirstOrDefault(x => x.RoleIds.All(activeRoleIds.Contains));
     }
 
     private static bool IsExpired(CredentialAccessResponse rule)
@@ -449,5 +727,26 @@ public sealed partial class AccessCredentialItemViewModel : ObservableObject
             "ITADMIN" => 4,
             _ => 999
         };
+    }
+}
+
+public sealed class RoleAccessOption
+{
+    public RoleAccessOption(string roleName, string displayName, IReadOnlyCollection<long> roleIds)
+    {
+        RoleName = roleName;
+        DisplayName = displayName;
+        RoleIds = roleIds;
+    }
+
+    public string RoleName { get; }
+
+    public string DisplayName { get; }
+
+    public IReadOnlyCollection<long> RoleIds { get; }
+
+    public override string ToString()
+    {
+        return DisplayName;
     }
 }

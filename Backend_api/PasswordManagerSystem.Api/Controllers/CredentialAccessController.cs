@@ -42,7 +42,10 @@ public class CredentialAccessController : ControllerBase
 
         var credential = await _dbContext.Credentials
             .Include(x => x.Company)
-            .FirstOrDefaultAsync(x => x.Id == request.CredentialId && x.IsActive);
+            .FirstOrDefaultAsync(x =>
+                x.Id == request.CredentialId &&
+                x.IsActive &&
+                x.Company.IsActive);
 
         if (credential is null)
         {
@@ -105,6 +108,8 @@ public class CredentialAccessController : ControllerBase
             }
 
             request.CanView = true;
+            request.CanWrite = false;
+            request.CanDelete = false;
         }
 
         Role? role = null;
@@ -113,7 +118,9 @@ public class CredentialAccessController : ControllerBase
         if (request.RoleId.HasValue)
         {
             role = await _dbContext.Roles
-                .FirstOrDefaultAsync(x => x.Id == request.RoleId.Value && x.IsActive);
+                .FirstOrDefaultAsync(x =>
+                    x.Id == request.RoleId.Value &&
+                    x.IsActive);
 
             if (role is null)
             {
@@ -127,7 +134,9 @@ public class CredentialAccessController : ControllerBase
         if (request.UserId.HasValue)
         {
             targetUser = await _dbContext.Users
-                .FirstOrDefaultAsync(x => x.Id == request.UserId.Value && x.IsActive);
+                .FirstOrDefaultAsync(x =>
+                    x.Id == request.UserId.Value &&
+                    x.IsActive);
 
             if (targetUser is null)
             {
@@ -206,86 +215,93 @@ public class CredentialAccessController : ControllerBase
     }
 
     [HttpGet("credential/{credentialId:long}")]
-	public async Task<IActionResult> GetAccessRulesByCredential(long credentialId)
-	{
-		var currentUserId = GetCurrentUserId();
-		var currentRoleId = GetCurrentRoleId();
+    public async Task<IActionResult> GetAccessRulesByCredential(long credentialId)
+    {
+        var currentUserId = GetCurrentUserId();
+        var currentRoleId = GetCurrentRoleId();
 
-		var isItAdmin = IsCurrentUserItAdmin();
-		var isIt = IsCurrentUserIt();
+        var isItAdmin = IsCurrentUserItAdmin();
+        var isIt = IsCurrentUserIt();
 
-		if (!isItAdmin && !isIt)
-		{
-			return Forbid();
-		}
+        if (!isItAdmin && !isIt)
+        {
+            return Forbid();
+        }
 
-		var credential = await _dbContext.Credentials
-			.AsNoTracking()
-			.Include(x => x.Company)
-			.FirstOrDefaultAsync(x =>
-				x.Id == credentialId &&
-				x.IsActive &&
-				x.Company.IsActive);
+        var credential = await _dbContext.Credentials
+            .AsNoTracking()
+            .Include(x => x.Company)
+            .FirstOrDefaultAsync(x =>
+                x.Id == credentialId &&
+                x.IsActive &&
+                x.Company.IsActive);
 
-		if (credential is null)
-		{
-			return NotFound(new
-			{
-				message = "Active credential not found."
-			});
-		}
+        if (credential is null)
+        {
+            return NotFound(new
+            {
+                message = "Active credential not found."
+            });
+        }
 
-		if (isIt && !isItAdmin)
-		{
-			var now = DateTime.UtcNow;
+        if (isIt && !isItAdmin)
+        {
+            var now = DateTime.UtcNow;
 
-			var canCurrentItUserViewCredential = await _dbContext.CredentialAccesses
-				.AsNoTracking()
-				.AnyAsync(x =>
-					x.CredentialId == credential.Id &&
-					x.CanView &&
-					(x.ExpiresAt == null || x.ExpiresAt > now) &&
-					(
-						x.UserId == currentUserId ||
-						x.RoleId == currentRoleId
-					));
+            var canCurrentItUserViewCredential = await _dbContext.CredentialAccesses
+                .AsNoTracking()
+                .AnyAsync(x =>
+                    x.CredentialId == credential.Id &&
+                    x.CanView &&
+                    (x.ExpiresAt == null || x.ExpiresAt > now) &&
+                    (
+                        x.UserId == currentUserId ||
+                        x.RoleId == currentRoleId
+                    ));
 
-			if (!canCurrentItUserViewCredential)
-			{
-				return Forbid();
-			}
-		}
+            if (!canCurrentItUserViewCredential)
+            {
+                return Forbid();
+            }
+        }
 
-		var accessRules = await _dbContext.CredentialAccesses
-			.AsNoTracking()
-			.Include(x => x.Role)
-			.Include(x => x.User)
-			.Where(x => x.CredentialId == credentialId)
-			.OrderBy(x => x.Id)
-			.Select(x => new CredentialAccessResponse
-			{
-				Id = x.Id,
-				CredentialId = x.CredentialId,
-				RoleId = x.RoleId,
-				RoleName = x.Role != null ? x.Role.Name : null,
-				UserId = x.UserId,
-				AdUsername = x.User != null ? x.User.AdUsername : null,
-				CanView = x.CanView,
-				CanWrite = x.CanWrite,
-				CanDelete = x.CanDelete,
-				ExpiresAt = x.ExpiresAt,
-				CreatedByUserId = x.CreatedByUserId,
-				CreatedAt = x.CreatedAt
-			})
-			.ToListAsync();
+        var accessRules = await _dbContext.CredentialAccesses
+            .AsNoTracking()
+            .Include(x => x.Role)
+            .Include(x => x.User)
+            .Where(x => x.CredentialId == credentialId)
+            .OrderBy(x => x.Id)
+            .Select(x => new CredentialAccessResponse
+            {
+                Id = x.Id,
+                CredentialId = x.CredentialId,
+                RoleId = x.RoleId,
+                RoleName = x.Role != null ? x.Role.Name : null,
+                UserId = x.UserId,
+                AdUsername = x.User != null ? x.User.AdUsername : null,
+                CanView = x.CanView,
+                CanWrite = x.CanWrite,
+                CanDelete = x.CanDelete,
+                ExpiresAt = x.ExpiresAt,
+                CreatedByUserId = x.CreatedByUserId,
+                CreatedAt = x.CreatedAt
+            })
+            .ToListAsync();
 
-		return Ok(accessRules);
-	}
+        return Ok(accessRules);
+    }
 
     [HttpDelete("{id:long}")]
     public async Task<IActionResult> DeleteAccessRule(long id)
     {
-        if (!IsCurrentUserItAdmin())
+        var currentUserId = GetCurrentUserId();
+        var currentRoleId = GetCurrentRoleId();
+        var currentAdUsername = GetCurrentAdUsername();
+
+        var isItAdmin = IsCurrentUserItAdmin();
+        var isIt = IsCurrentUserIt();
+
+        if (!isItAdmin && !isIt)
         {
             return Forbid();
         }
@@ -305,8 +321,44 @@ public class CredentialAccessController : ControllerBase
             });
         }
 
-        var currentUserId = GetCurrentUserId();
-        var currentAdUsername = GetCurrentAdUsername();
+        if (!accessRule.Credential.IsActive || !accessRule.Credential.Company.IsActive)
+        {
+            return NotFound(new
+            {
+                message = "Active credential not found."
+            });
+        }
+
+        if (isIt && !isItAdmin)
+        {
+            var now = DateTime.UtcNow;
+
+            var isUserBasedTemporaryRule =
+                accessRule.UserId.HasValue &&
+                !accessRule.RoleId.HasValue &&
+                accessRule.ExpiresAt.HasValue;
+
+            var wasCreatedByCurrentUser =
+                accessRule.CreatedByUserId == currentUserId;
+
+            var canCurrentItUserViewCredential = await _dbContext.CredentialAccesses
+                .AsNoTracking()
+                .AnyAsync(x =>
+                    x.CredentialId == accessRule.CredentialId &&
+                    x.CanView &&
+                    (x.ExpiresAt == null || x.ExpiresAt > now) &&
+                    (
+                        x.UserId == currentUserId ||
+                        x.RoleId == currentRoleId
+                    ));
+
+            if (!isUserBasedTemporaryRule ||
+                !wasCreatedByCurrentUser ||
+                !canCurrentItUserViewCredential)
+            {
+                return Forbid();
+            }
+        }
 
         var credentialId = accessRule.CredentialId;
         var companyId = accessRule.Credential.CompanyId;

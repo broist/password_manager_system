@@ -9,10 +9,10 @@ using PasswordManagerSystem.Client.Services.Auth;
 using PasswordManagerSystem.Client.Services.Dialogs;
 using PasswordManagerSystem.Client.Services.Notifications;
 using PasswordManagerSystem.Client.Services.Session;
+using PasswordManagerSystem.Client.ViewModels.Access;
+using PasswordManagerSystem.Client.ViewModels.Companies;
 using PasswordManagerSystem.Client.ViewModels.Credentials;
 using PasswordManagerSystem.Client.Views;
-using PasswordManagerSystem.Client.ViewModels.Companies;
-using PasswordManagerSystem.Client.ViewModels.Access;
 
 namespace PasswordManagerSystem.Client.ViewModels;
 
@@ -24,6 +24,9 @@ public sealed partial class ShellViewModel : ObservableObject
     private readonly IDialogService _dialogService;
     private readonly IToastService _toastService;
     private readonly ILogger<ShellViewModel> _logger;
+
+    private Rect? _normalWindowBounds;
+    private bool _isManualMaximized;
 
     public ShellViewModel(
         IServiceProvider serviceProvider,
@@ -55,13 +58,16 @@ public sealed partial class ShellViewModel : ObservableObject
     private object? _currentView;
 
     public string UserDisplayName => _sessionService.CurrentUser?.DisplayName ?? "?";
+
     public string AdUsername => _sessionService.CurrentUser?.AdUsername ?? string.Empty;
+
     public string RoleDisplayName => _sessionService.CurrentRole?.DisplayName
                                      ?? _sessionService.CurrentRole?.Name
                                      ?? string.Empty;
+
     public string RoleName => _sessionService.CurrentRole?.Name ?? string.Empty;
 
-    /// <summary>Az aktuális role-szín a badge-hez (amit a XAML triggers fog használni).</summary>
+    /// <summary>Az aktuális role-szín a badge-hez.</summary>
     public string RoleColorKey => _sessionService.CurrentRole?.Name switch
     {
         RoleNames.ItAdmin => "Brush.Role.ItAdmin",
@@ -72,22 +78,22 @@ public sealed partial class ShellViewModel : ObservableObject
     };
 
     private void BuildNavigation()
-	{
-		NavigationItems.Add(new NavItem("Bejegyzések", "Icon.Key", typeof(CredentialListViewModel)));
-		NavigationItems.Add(new NavItem("Cégek", "Icon.Building", typeof(CompaniesViewModel)));
+    {
+        NavigationItems.Add(new NavItem("Bejegyzések", "Icon.Key", typeof(CredentialListViewModel)));
+        NavigationItems.Add(new NavItem("Cégek", "Icon.Building", typeof(CompaniesViewModel)));
 
-		if (_sessionService.IsItAdmin || _sessionService.IsIt)
-		{
-			NavigationItems.Add(new NavItem("Hozzáférések", "Icon.Shield", typeof(AccessViewModel)));
-		}
+        if (_sessionService.IsItAdmin || _sessionService.IsIt)
+        {
+            NavigationItems.Add(new NavItem("Hozzáférések", "Icon.Shield", typeof(AccessViewModel)));
+        }
 
-		if (_sessionService.IsItAdmin)
-		{
-			NavigationItems.Add(new NavItem("Audit napló", "Icon.Activity", null) { IsPlaceholder = true });
-		}
+        if (_sessionService.IsItAdmin)
+        {
+            NavigationItems.Add(new NavItem("Audit napló", "Icon.Activity", null) { IsPlaceholder = true });
+        }
 
-		NavigationItems.Add(new NavItem("Beállítások", "Icon.Settings", null) { IsPlaceholder = true });
-	}
+        NavigationItems.Add(new NavItem("Beállítások", "Icon.Settings", null) { IsPlaceholder = true });
+    }
 
     partial void OnSelectedNavItemChanged(NavItem? value)
     {
@@ -142,7 +148,6 @@ public sealed partial class ShellViewModel : ObservableObject
 
         _sessionService.ClearSession();
 
-        // Login ablak újranyitása, Shell bezárása
         Application.Current.Dispatcher.Invoke(() =>
         {
             var login = App.Services.GetRequiredService<LoginWindow>();
@@ -171,12 +176,59 @@ public sealed partial class ShellViewModel : ObservableObject
     [RelayCommand]
     private void ToggleMaximize()
     {
-        if (Application.Current.MainWindow is { } main)
+        if (Application.Current.MainWindow is not { } main)
         {
-            main.WindowState = main.WindowState == WindowState.Maximized
-                ? WindowState.Normal
-                : WindowState.Maximized;
+            return;
         }
+
+        if (_isManualMaximized)
+        {
+            RestoreWindow(main);
+            return;
+        }
+
+        MaximizeToWorkArea(main);
+    }
+
+    private void MaximizeToWorkArea(Window window)
+    {
+        if (window.WindowState == WindowState.Maximized)
+        {
+            window.WindowState = WindowState.Normal;
+        }
+
+        _normalWindowBounds = new Rect(
+            window.Left,
+            window.Top,
+            window.Width,
+            window.Height);
+
+        var workArea = SystemParameters.WorkArea;
+
+        window.WindowState = WindowState.Normal;
+        window.Left = workArea.Left;
+        window.Top = workArea.Top;
+        window.Width = workArea.Width;
+        window.Height = workArea.Height;
+
+        _isManualMaximized = true;
+    }
+
+    private void RestoreWindow(Window window)
+    {
+        window.WindowState = WindowState.Normal;
+
+        if (_normalWindowBounds.HasValue)
+        {
+            var bounds = _normalWindowBounds.Value;
+
+            window.Left = bounds.Left;
+            window.Top = bounds.Top;
+            window.Width = bounds.Width;
+            window.Height = bounds.Height;
+        }
+
+        _isManualMaximized = false;
     }
 
     [RelayCommand]
@@ -199,7 +251,9 @@ public sealed class NavItem
     }
 
     public string Title { get; }
+
     public string IconKey { get; }
+
     public Type? ViewModelType { get; }
 
     /// <summary>True ha placeholder — ilyenkor egy "hamarosan" típusú nézetet mutatunk.</summary>
@@ -207,7 +261,7 @@ public sealed class NavItem
 }
 
 /// <summary>
-/// Helykitöltő ViewModel: olyan nézetekhez amik még nincsenek implementálva.
+/// Helykitöltő ViewModel: olyan nézetekhez, amik még nincsenek implementálva.
 /// </summary>
 public sealed class PlaceholderViewModel
 {
