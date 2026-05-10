@@ -6,138 +6,183 @@ using PasswordManagerSystem.Client.Models.Users;
 
 namespace PasswordManagerSystem.Client.Services.Api;
 
-public interface IPasswordGeneratorService
-{
-    Task<GeneratePasswordResponse?> GenerateAsync(
-        GeneratePasswordRequest request,
-        CancellationToken cancellationToken = default);
-}
+	public interface IPasswordGeneratorService
+	{
+		Task<GeneratePasswordResponse?> GenerateAsync(
+			GeneratePasswordRequest request,
+			CancellationToken cancellationToken = default);
+	}
 
-public sealed class PasswordGeneratorService : IPasswordGeneratorService
-{
-    private readonly IApiClient _apiClient;
+	public sealed class PasswordGeneratorService : IPasswordGeneratorService
+	{
+		private readonly IApiClient _apiClient;
 
-    public PasswordGeneratorService(IApiClient apiClient)
-    {
-        _apiClient = apiClient;
-    }
+		public PasswordGeneratorService(IApiClient apiClient)
+		{
+			_apiClient = apiClient;
+		}
 
-    public Task<GeneratePasswordResponse?> GenerateAsync(
-        GeneratePasswordRequest request,
-        CancellationToken cancellationToken = default)
-        => _apiClient.PostAsync<GeneratePasswordRequest, GeneratePasswordResponse>(
-            "api/PasswordGenerator/generate",
-            request,
-            cancellationToken);
-}
+		public Task<GeneratePasswordResponse?> GenerateAsync(
+			GeneratePasswordRequest request,
+			CancellationToken cancellationToken = default)
+			=> _apiClient.PostAsync<GeneratePasswordRequest, GeneratePasswordResponse>(
+				"api/PasswordGenerator/generate",
+				request,
+				cancellationToken);
+	}
 
-public interface IHealthService
-{
-    Task<HealthResponse?> GetHealthAsync(CancellationToken cancellationToken = default);
-}
+	public interface IHealthService
+	{
+		Task<HealthResponse?> GetHealthAsync(CancellationToken cancellationToken = default);
+	}
 
-public sealed class HealthService : IHealthService
-{
-    private readonly IApiClient _apiClient;
+	public sealed class HealthService : IHealthService
+	{
+		private readonly IApiClient _apiClient;
 
-    public HealthService(IApiClient apiClient)
-    {
-        _apiClient = apiClient;
-    }
+		public HealthService(IApiClient apiClient)
+		{
+			_apiClient = apiClient;
+		}
 
-    public Task<HealthResponse?> GetHealthAsync(CancellationToken cancellationToken = default)
-        => _apiClient.GetAsync<HealthResponse>("api/Health", cancellationToken);
-}
+		public Task<HealthResponse?> GetHealthAsync(CancellationToken cancellationToken = default)
+			=> _apiClient.GetAsync<HealthResponse>("api/Health", cancellationToken);
+	}
 
-public interface ICredentialAccessApiService
-{
-    Task<IReadOnlyList<CredentialAccessResponse>> GetByCredentialAsync(
-        long credentialId,
-        CancellationToken cancellationToken = default);
+	public interface ICredentialAccessApiService
+	{
+		Task<IReadOnlyList<CredentialAccessResponse>> GetByCredentialAsync(
+			long credentialId,
+			CancellationToken cancellationToken = default);
 
-    Task<CredentialAccessResponse?> CreateAsync(
-        CreateCredentialAccessRequest request,
-        CancellationToken cancellationToken = default);
+		Task<CredentialAccessResponse?> CreateAsync(
+			CreateCredentialAccessRequest request,
+			CancellationToken cancellationToken = default);
 
-    Task DeleteAsync(long id, CancellationToken cancellationToken = default);
-}
+		Task DeleteAsync(long id, CancellationToken cancellationToken = default);
+	}
 
-public sealed class CredentialAccessApiService : ICredentialAccessApiService
-{
-    private readonly IApiClient _apiClient;
+	public sealed class CredentialAccessApiService : ICredentialAccessApiService
+	{
+		private readonly IApiClient _apiClient;
 
-    public CredentialAccessApiService(IApiClient apiClient)
-    {
-        _apiClient = apiClient;
-    }
+		public CredentialAccessApiService(IApiClient apiClient)
+		{
+			_apiClient = apiClient;
+		}
 
-    public async Task<IReadOnlyList<CredentialAccessResponse>> GetByCredentialAsync(
-        long credentialId,
-        CancellationToken cancellationToken = default)
-    {
-        var list = await _apiClient
-            .GetAsync<List<CredentialAccessResponse>>(
-                $"api/CredentialAccess/credential/{credentialId}",
-                cancellationToken)
-            .ConfigureAwait(false);
+		public async Task<IReadOnlyList<CredentialAccessResponse>> GetByCredentialAsync(
+			long credentialId,
+			CancellationToken cancellationToken = default)
+		{
+			var list = await _apiClient
+				.GetAsync<List<CredentialAccessResponse>>(
+					$"api/CredentialAccess/credential/{credentialId}",
+					cancellationToken)
+				.ConfigureAwait(false);
 
-        return list ?? new List<CredentialAccessResponse>();
-    }
+			return list ?? new List<CredentialAccessResponse>();
+		}
 
-    public Task<CredentialAccessResponse?> CreateAsync(
-        CreateCredentialAccessRequest request,
-        CancellationToken cancellationToken = default)
-        => _apiClient.PostAsync<CreateCredentialAccessRequest, CredentialAccessResponse>(
-            "api/CredentialAccess",
-            request,
-            cancellationToken);
+		public Task<CredentialAccessResponse?> CreateAsync(
+			CreateCredentialAccessRequest request,
+			CancellationToken cancellationToken = default)
+			=> _apiClient.PostAsync<CreateCredentialAccessRequest, CredentialAccessResponse>(
+				"api/CredentialAccess",
+				request,
+				cancellationToken);
 
-    public Task DeleteAsync(long id, CancellationToken cancellationToken = default)
-        => _apiClient.DeleteAsync($"api/CredentialAccess/{id}", cancellationToken);
-}
+		public Task DeleteAsync(long id, CancellationToken cancellationToken = default)
+			=> _apiClient.DeleteAsync($"api/CredentialAccess/{id}", cancellationToken);
+	}
 
-public interface IAuditApiService
-{
-    Task<AuditChainVerificationResponse?> VerifyChainAsync(CancellationToken cancellationToken = default);
-}
+	public interface IAuditApiService
+	{
+		Task<AuditChainVerificationResponse?> VerifyChainAsync(
+			CancellationToken cancellationToken = default);
 
-public sealed class AuditApiService : IAuditApiService
-{
-    private readonly IApiClient _apiClient;
+		Task<AuditLogListResponse?> GetLogsAsync(
+			int take = 200,
+			string? action = null,
+			string? adUsername = null,
+			bool? success = null,
+			CancellationToken cancellationToken = default);
+	}
 
-    public AuditApiService(IApiClient apiClient)
-    {
-        _apiClient = apiClient;
-    }
+	public sealed class AuditApiService : IAuditApiService
+	{
+		private readonly IApiClient _apiClient;
 
-    public Task<AuditChainVerificationResponse?> VerifyChainAsync(CancellationToken cancellationToken = default)
-        => _apiClient.GetAsync<AuditChainVerificationResponse>("api/Audit/verify-chain", cancellationToken);
-}
+		public AuditApiService(IApiClient apiClient)
+		{
+			_apiClient = apiClient;
+		}
 
-public interface IUsersApiService
-{
-    Task<IReadOnlyList<ActiveUserResponse>> GetActiveUsersAsync(
-        CancellationToken cancellationToken = default);
-}
+		public Task<AuditChainVerificationResponse?> VerifyChainAsync(
+			CancellationToken cancellationToken = default)
+			=> _apiClient.GetAsync<AuditChainVerificationResponse>(
+				"api/Audit/verify-chain",
+				cancellationToken);
 
-public sealed class UsersApiService : IUsersApiService
-{
-    private readonly IApiClient _apiClient;
+		public Task<AuditLogListResponse?> GetLogsAsync(
+			int take = 200,
+			string? action = null,
+			string? adUsername = null,
+			bool? success = null,
+			CancellationToken cancellationToken = default)
+		{
+			var queryParts = new List<string>
+			{
+				$"take={take}"
+			};
 
-    public UsersApiService(IApiClient apiClient)
-    {
-        _apiClient = apiClient;
-    }
+			if (!string.IsNullOrWhiteSpace(action))
+			{
+				queryParts.Add($"action={Uri.EscapeDataString(action)}");
+			}
 
-    public async Task<IReadOnlyList<ActiveUserResponse>> GetActiveUsersAsync(
-        CancellationToken cancellationToken = default)
-    {
-        var list = await _apiClient
-            .GetAsync<List<ActiveUserResponse>>(
-                "api/Users/active",
-                cancellationToken)
-            .ConfigureAwait(false);
+			if (!string.IsNullOrWhiteSpace(adUsername))
+			{
+				queryParts.Add($"adUsername={Uri.EscapeDataString(adUsername)}");
+			}
 
-        return list ?? new List<ActiveUserResponse>();
-    }
-}
+			if (success.HasValue)
+			{
+				queryParts.Add($"success={success.Value.ToString().ToLowerInvariant()}");
+			}
+
+			var query = string.Join("&", queryParts);
+
+			return _apiClient.GetAsync<AuditLogListResponse>(
+				$"api/Audit/logs?{query}",
+				cancellationToken);
+		}
+	}
+
+	public interface IUsersApiService
+	{
+		Task<IReadOnlyList<ActiveUserResponse>> GetActiveUsersAsync(
+			CancellationToken cancellationToken = default);
+	}
+
+	public sealed class UsersApiService : IUsersApiService
+	{
+		private readonly IApiClient _apiClient;
+
+		public UsersApiService(IApiClient apiClient)
+		{
+			_apiClient = apiClient;
+		}
+
+		public async Task<IReadOnlyList<ActiveUserResponse>> GetActiveUsersAsync(
+			CancellationToken cancellationToken = default)
+		{
+			var list = await _apiClient
+				.GetAsync<List<ActiveUserResponse>>(
+					"api/Users/active",
+					cancellationToken)
+				.ConfigureAwait(false);
+
+			return list ?? new List<ActiveUserResponse>();
+		}
+	}

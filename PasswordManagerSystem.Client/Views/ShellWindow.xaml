@@ -7,10 +7,12 @@
         xmlns:vm="clr-namespace:PasswordManagerSystem.Client.ViewModels"
         xmlns:credvm="clr-namespace:PasswordManagerSystem.Client.ViewModels.Credentials"
         xmlns:credv="clr-namespace:PasswordManagerSystem.Client.Views.Credentials"
-		xmlns:compvm="clr-namespace:PasswordManagerSystem.Client.ViewModels.Companies"
-		xmlns:compv="clr-namespace:PasswordManagerSystem.Client.Views.Companies"
-		xmlns:accessvm="clr-namespace:PasswordManagerSystem.Client.ViewModels.Access"
-		xmlns:accessv="clr-namespace:PasswordManagerSystem.Client.Views.Access"
+        xmlns:compvm="clr-namespace:PasswordManagerSystem.Client.ViewModels.Companies"
+        xmlns:compv="clr-namespace:PasswordManagerSystem.Client.Views.Companies"
+        xmlns:accessvm="clr-namespace:PasswordManagerSystem.Client.ViewModels.Access"
+        xmlns:accessv="clr-namespace:PasswordManagerSystem.Client.Views.Access"
+        xmlns:auditvm="clr-namespace:PasswordManagerSystem.Client.ViewModels.Audit"
+        xmlns:auditv="clr-namespace:PasswordManagerSystem.Client.Views.Audit"
         mc:Ignorable="d"
         Title="Password Manager System"
         Width="1320"
@@ -26,14 +28,18 @@
         <DataTemplate DataType="{x:Type credvm:CredentialListViewModel}">
             <credv:CredentialListView/>
         </DataTemplate>
-		
-		<DataTemplate DataType="{x:Type accessvm:AccessViewModel}">
-			<accessv:AccessView/>
-		</DataTemplate>
-		
-		<DataTemplate DataType="{x:Type compvm:CompaniesViewModel}">
-			<compv:CompaniesView/>
-		</DataTemplate>
+
+        <DataTemplate DataType="{x:Type accessvm:AccessViewModel}">
+            <accessv:AccessView/>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type compvm:CompaniesViewModel}">
+            <compv:CompaniesView/>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type auditvm:AuditViewModel}">
+            <auditv:AuditView/>
+        </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:PlaceholderViewModel}">
             <Grid Background="{DynamicResource Brush.Surface.Panel}">
@@ -51,10 +57,12 @@
                               HorizontalAlignment="Center"
                               VerticalAlignment="Center"/>
                     </Border>
+
                     <TextBlock Text="{Binding FeatureName}"
                                Style="{StaticResource Text.Heading2}"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,8"/>
+
                     <TextBlock Text="Ez a funkció a következő iterációban érkezik. A backend már támogatja, csak a kliens-oldali UI van hátra."
                                Style="{StaticResource Text.Body}"
                                Foreground="{DynamicResource Brush.Text.Secondary}"
@@ -62,7 +70,6 @@
                                TextAlignment="Center"/>
                 </StackPanel>
             </Grid>
-			
         </DataTemplate>
     </Window.Resources>
 
@@ -97,11 +104,13 @@
                         <Path Data="{StaticResource Icon.Shield}"
                               Stroke="{DynamicResource Brush.Accent.Default}"
                               StrokeThickness="1.5"
-                              Width="13" Height="13"
+                              Width="13"
+                              Height="13"
                               Stretch="Uniform"
                               HorizontalAlignment="Center"
                               VerticalAlignment="Center"/>
                     </Border>
+
                     <TextBlock Text="Password Manager"
                                Style="{StaticResource Text.BodySmall}"
                                Foreground="{DynamicResource Brush.Text.Primary}"
@@ -115,33 +124,41 @@
                             Orientation="Horizontal"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button Style="{StaticResource Button.Icon}"
-                            Width="44" Height="44"
+                            Width="44"
+                            Height="44"
                             Command="{Binding MinimizeCommand}"
                             ToolTip="Minimalizálás">
                         <Path Data="{StaticResource Icon.Minimize}"
                               Stroke="{DynamicResource Brush.Text.Secondary}"
                               StrokeThickness="1.5"
-                              Width="14" Height="14"
+                              Width="14"
+                              Height="14"
                               Stretch="Uniform"/>
                     </Button>
+
                     <Button Style="{StaticResource Button.Icon}"
-                            Width="44" Height="44"
+                            Width="44"
+                            Height="44"
                             Command="{Binding ToggleMaximizeCommand}"
                             ToolTip="Méretváltás">
                         <Path Data="{StaticResource Icon.Maximize}"
                               Stroke="{DynamicResource Brush.Text.Secondary}"
                               StrokeThickness="1.5"
-                              Width="11" Height="11"
+                              Width="11"
+                              Height="11"
                               Stretch="Uniform"/>
                     </Button>
+
                     <Button Style="{StaticResource Button.Icon}"
-                            Width="44" Height="44"
+                            Width="44"
+                            Height="44"
                             Command="{Binding CloseCommand}"
                             ToolTip="Bezárás">
                         <Path Data="{StaticResource Icon.Close}"
                               Stroke="{DynamicResource Brush.Text.Secondary}"
                               StrokeThickness="1.5"
-                              Width="14" Height="14"
+                              Width="14"
+                              Height="14"
                               Stretch="Uniform"/>
                     </Button>
                 </StackPanel>
@@ -179,7 +196,8 @@
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
                                     <!-- Avatar (initials fallback) -->
-                                    <Border Width="32" Height="32"
+                                    <Border Width="32"
+                                            Height="32"
                                             CornerRadius="16"
                                             Background="{DynamicResource Brush.Accent.Subtle}">
                                         <TextBlock Text="{Binding UserDisplayName, Converter={StaticResource InitialsConv}}"
@@ -189,12 +207,15 @@
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"/>
                                     </Border>
-                                    <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+
+                                    <StackPanel Margin="10,0,0,0"
+                                                VerticalAlignment="Center">
                                         <TextBlock Text="{Binding UserDisplayName}"
                                                    Style="{StaticResource Text.BodySmall}"
                                                    Foreground="{DynamicResource Brush.Text.Primary}"
                                                    FontWeight="SemiBold"
                                                    TextTrimming="CharacterEllipsis"/>
+
                                         <TextBlock Text="{Binding AdUsername}"
                                                    Style="{StaticResource Text.Caption}"
                                                    TextTrimming="CharacterEllipsis"/>
@@ -208,9 +229,11 @@
                                         CornerRadius="3"
                                         Background="{DynamicResource Brush.Surface.Overlay}">
                                     <StackPanel Orientation="Horizontal">
-                                        <Ellipse Width="6" Height="6"
+                                        <Ellipse Width="6"
+                                                 Height="6"
                                                  Fill="{DynamicResource Brush.Accent.Default}"
                                                  VerticalAlignment="Center"/>
+
                                         <TextBlock Text="{Binding RoleDisplayName}"
                                                    Style="{StaticResource Text.Caption}"
                                                    Foreground="{DynamicResource Brush.Text.Primary}"
@@ -232,7 +255,8 @@
                                 <DataTemplate DataType="{x:Type vm:NavItem}">
                                     <StackPanel Orientation="Horizontal"
                                                 Margin="6,0">
-                                        <ContentControl Width="18" Height="18"
+                                        <ContentControl Width="18"
+                                                        Height="18"
                                                         VerticalAlignment="Center">
                                             <ContentControl.Style>
                                                 <Style TargetType="ContentControl">
@@ -247,6 +271,7 @@
                                                                 </Setter.Value>
                                                             </Setter>
                                                         </DataTrigger>
+
                                                         <DataTrigger Binding="{Binding IconKey}" Value="Icon.Building">
                                                             <Setter Property="Content">
                                                                 <Setter.Value>
@@ -257,6 +282,7 @@
                                                                 </Setter.Value>
                                                             </Setter>
                                                         </DataTrigger>
+
                                                         <DataTrigger Binding="{Binding IconKey}" Value="Icon.Shield">
                                                             <Setter Property="Content">
                                                                 <Setter.Value>
@@ -267,6 +293,7 @@
                                                                 </Setter.Value>
                                                             </Setter>
                                                         </DataTrigger>
+
                                                         <DataTrigger Binding="{Binding IconKey}" Value="Icon.Activity">
                                                             <Setter Property="Content">
                                                                 <Setter.Value>
@@ -277,6 +304,7 @@
                                                                 </Setter.Value>
                                                             </Setter>
                                                         </DataTrigger>
+
                                                         <DataTrigger Binding="{Binding IconKey}" Value="Icon.Settings">
                                                             <Setter Property="Content">
                                                                 <Setter.Value>
@@ -291,6 +319,7 @@
                                                 </Style>
                                             </ContentControl.Style>
                                         </ContentControl>
+
                                         <TextBlock Text="{Binding Title}"
                                                    Margin="14,0,0,0"
                                                    VerticalAlignment="Center"/>
@@ -312,9 +341,11 @@
                                     <Path Data="{StaticResource Icon.LogOut}"
                                           Stroke="{DynamicResource Brush.Text.Secondary}"
                                           StrokeThickness="1.5"
-                                          Width="16" Height="16"
+                                          Width="16"
+                                          Height="16"
                                           Stretch="Uniform"
                                           VerticalAlignment="Center"/>
+
                                     <TextBlock Text="Kijelentkezés"
                                                Margin="14,0,0,0"
                                                VerticalAlignment="Center"/>
@@ -325,7 +356,8 @@
                 </Border>
 
                 <!-- ============ CONTENT AREA ============ -->
-                <Grid Grid.Column="1" Background="{DynamicResource Brush.Surface.Panel}">
+                <Grid Grid.Column="1"
+                      Background="{DynamicResource Brush.Surface.Panel}">
                     <ContentControl Content="{Binding CurrentView}"/>
 
                     <!-- Toast notification overlay -->
@@ -345,18 +377,25 @@
                                     <DataTrigger Binding="{Binding Toasts.Current.Severity}" Value="Success">
                                         <Setter Property="BorderBrush" Value="{DynamicResource Brush.Success}"/>
                                     </DataTrigger>
+
                                     <DataTrigger Binding="{Binding Toasts.Current.Severity}" Value="Warning">
                                         <Setter Property="BorderBrush" Value="{DynamicResource Brush.Warning}"/>
                                     </DataTrigger>
+
                                     <DataTrigger Binding="{Binding Toasts.Current.Severity}" Value="Error">
                                         <Setter Property="BorderBrush" Value="{DynamicResource Brush.Danger}"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Border.Style>
+
                         <Border.Effect>
-                            <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.5" Color="Black"/>
+                            <DropShadowEffect BlurRadius="20"
+                                              ShadowDepth="4"
+                                              Opacity="0.5"
+                                              Color="Black"/>
                         </Border.Effect>
+
                         <TextBlock Text="{Binding Toasts.Current.Message}"
                                    Style="{StaticResource Text.Body}"
                                    TextWrapping="Wrap"/>

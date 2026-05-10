@@ -1,0 +1,354 @@
+<UserControl x:Class="PasswordManagerSystem.Client.Views.Audit.AuditView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Background="{DynamicResource Brush.Surface.Panel}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Padding="30,24"
+                BorderBrush="{DynamicResource Brush.Border.Subtle}"
+                BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Audit napló"
+                               Style="{StaticResource Text.Heading2}"/>
+
+                    <TextBlock Style="{StaticResource Text.BodySmall}"
+                               Foreground="{DynamicResource Brush.Text.Secondary}"
+                               Margin="0,8,0,0">
+                        <Run Text="{Binding ReturnedCount, Mode=OneWay}"/>
+                        <Run Text=" megjelenített esemény / "/>
+                        <Run Text="{Binding TotalCount, Mode=OneWay}"/>
+                        <Run Text=" találat"/>
+                    </TextBlock>
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Content="Hash-chain ellenőrzés"
+                        Style="{StaticResource Button.Secondary}"
+                        Padding="14,8"
+                        Command="{Binding VerifyChainCommand}"
+                        VerticalAlignment="Top"/>
+
+                <Button Grid.Column="3"
+                        Content="Frissítés"
+                        Style="{StaticResource Button.Secondary}"
+                        Padding="14,8"
+                        Command="{Binding RefreshCommand}"
+                        VerticalAlignment="Top"/>
+            </Grid>
+        </Border>
+
+        <!-- Filters + chain status -->
+        <Grid Grid.Row="1"
+              Margin="30,22,30,18">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="18"/>
+                <ColumnDefinition Width="1.2*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Filters -->
+            <Border Grid.Column="0"
+                    CornerRadius="12"
+                    Background="{DynamicResource Brush.Surface.Elevated}"
+                    BorderBrush="{DynamicResource Brush.Border.Subtle}"
+                    BorderThickness="1"
+                    Padding="18,16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Text="SZŰRÉS"
+                               Style="{StaticResource Text.Caption}"/>
+
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.2*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="1.2*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="90"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding ActionFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 Height="36"
+                                 VerticalContentAlignment="Center"
+                                 Padding="10,0"
+                                 ToolTip="Action szűrő, pl. LOGIN_SUCCESS, CREDENTIAL_CREATED"/>
+
+                        <TextBox Grid.Column="2"
+                                 Text="{Binding AdUsernameFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 Height="36"
+                                 VerticalContentAlignment="Center"
+                                 Padding="10,0"
+                                 ToolTip="AD felhasználónév szűrő"/>
+
+                        <TextBox Grid.Column="4"
+                                 Text="{Binding Take, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 Height="36"
+                                 VerticalContentAlignment="Center"
+                                 Padding="10,0"
+                                 ToolTip="Maximum elemszám"/>
+
+                        <StackPanel Grid.Column="6"
+                                    Orientation="Horizontal">
+                            <Button Content="Keresés"
+                                    Style="{StaticResource Button.Secondary}"
+                                    Padding="14,7"
+                                    Command="{Binding RefreshCommand}"/>
+
+                            <Button Content="Sikeres"
+                                    Style="{StaticResource Button.Secondary}"
+                                    Padding="12,7"
+                                    Margin="8,0,0,0"
+                                    Command="{Binding SetSuccessFilterCommand}"/>
+
+                            <Button Content="Sikertelen"
+                                    Style="{StaticResource Button.Secondary}"
+                                    Padding="12,7"
+                                    Margin="8,0,0,0"
+                                    Command="{Binding SetFailedFilterCommand}"/>
+
+                            <Button Content="Törlés"
+                                    Style="{StaticResource Button.Secondary}"
+                                    Padding="12,7"
+                                    Margin="8,0,0,0"
+                                    Command="{Binding ClearFiltersCommand}"/>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- Chain status -->
+            <Border Grid.Column="2"
+                    CornerRadius="12"
+                    Background="{DynamicResource Brush.Surface.Elevated}"
+                    BorderBrush="{DynamicResource Brush.Border.Subtle}"
+                    BorderThickness="1"
+                    Padding="18,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0"
+                            Width="42"
+                            Height="42"
+                            CornerRadius="21"
+                            Background="{DynamicResource Brush.Surface.Base}">
+                        <Path Data="{StaticResource Icon.Shield}"
+                              Stroke="{DynamicResource Brush.Accent.Default}"
+                              StrokeThickness="1.7"
+                              Width="20"
+                              Height="20"
+                              Stretch="Uniform"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"/>
+                    </Border>
+
+                    <StackPanel Grid.Column="2"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ChainStatusText}"
+                                   Style="{StaticResource Text.BodySmall}"
+                                   FontWeight="SemiBold"/>
+
+                        <TextBlock Text="{Binding ChainStatusDetails}"
+                                   Style="{StaticResource Text.Caption}"
+                                   Foreground="{DynamicResource Brush.Text.Secondary}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Audit table -->
+        <Border Grid.Row="2"
+                Margin="30,0,30,24"
+                CornerRadius="12"
+                Background="{DynamicResource Brush.Surface.Elevated}"
+                BorderBrush="{DynamicResource Brush.Border.Subtle}"
+                BorderThickness="1"
+                ClipToBounds="True">
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="44"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Table header -->
+                <Border Grid.Row="0"
+                        Background="{DynamicResource Brush.Surface.Base}"
+                        BorderBrush="{DynamicResource Brush.Border.Subtle}"
+                        BorderThickness="0,0,0,1">
+                    <Grid Margin="16,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="1.7*"/>
+                            <ColumnDefinition Width="1.4*"/>
+                            <ColumnDefinition Width="1.4*"/>
+                            <ColumnDefinition Width="1.2*"/>
+                            <ColumnDefinition Width="90"/>
+                            <ColumnDefinition Width="1.2*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="ID" Style="{StaticResource Text.Caption}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="IDŐPONT" Style="{StaticResource Text.Caption}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Text="FELHASZNÁLÓ" Style="{StaticResource Text.Caption}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="3" Text="ESEMÉNY" Style="{StaticResource Text.Caption}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="4" Text="CÉG" Style="{StaticResource Text.Caption}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="5" Text="BEJEGYZÉS" Style="{StaticResource Text.Caption}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="6" Text="ÁLLAPOT" Style="{StaticResource Text.Caption}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="7" Text="RÉSZLETEK" Style="{StaticResource Text.Caption}" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Table body -->
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+
+                    <ItemsControl ItemsSource="{Binding AuditLogs}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{DynamicResource Brush.Border.Subtle}"
+                                        BorderThickness="0,0,0,1"
+                                        Background="{DynamicResource Brush.Surface.Elevated}">
+                                    <Grid Margin="16,12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="150"/>
+                                            <ColumnDefinition Width="1.7*"/>
+                                            <ColumnDefinition Width="1.4*"/>
+                                            <ColumnDefinition Width="1.4*"/>
+                                            <ColumnDefinition Width="1.2*"/>
+                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="1.2*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding Id}"
+                                                   Style="{StaticResource Text.Caption}"
+                                                   Foreground="{DynamicResource Brush.Text.Secondary}"
+                                                   VerticalAlignment="Top"/>
+
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding CreatedAt, Converter={StaticResource ShortDateConv}}"
+                                                   Style="{StaticResource Text.Caption}"
+                                                   Foreground="{DynamicResource Brush.Text.Secondary}"
+                                                   VerticalAlignment="Top"/>
+
+                                        <StackPanel Grid.Column="2"
+                                                    Margin="0,0,14,0">
+                                            <TextBlock Text="{Binding AdUsername}"
+                                                       Style="{StaticResource Text.BodySmall}"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"/>
+
+                                            <TextBlock Text="{Binding IpAddress, TargetNullValue=Nincs IP}"
+                                                       Style="{StaticResource Text.Caption}"
+                                                       Foreground="{DynamicResource Brush.Text.Secondary}"
+                                                       Margin="0,3,0,0"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="3"
+                                                    Margin="0,0,14,0">
+                                            <TextBlock Text="{Binding Action}"
+                                                       Style="{StaticResource Text.BodySmall}"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"/>
+
+                                            <TextBlock Text="{Binding TargetType, TargetNullValue=Nincs cél}"
+                                                       Style="{StaticResource Text.Caption}"
+                                                       Foreground="{DynamicResource Brush.Text.Secondary}"
+                                                       Margin="0,3,0,0"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+
+                                        <TextBlock Grid.Column="4"
+                                                   Text="{Binding CompanyName, TargetNullValue=-}"
+                                                   Style="{StaticResource Text.Caption}"
+                                                   Foreground="{DynamicResource Brush.Text.Secondary}"
+                                                   Margin="0,2,14,0"
+                                                   TextWrapping="Wrap"/>
+
+                                        <TextBlock Grid.Column="5"
+                                                   Text="{Binding CredentialTitle, TargetNullValue=-}"
+                                                   Style="{StaticResource Text.Caption}"
+                                                   Foreground="{DynamicResource Brush.Text.Secondary}"
+                                                   Margin="0,2,14,0"
+                                                   TextWrapping="Wrap"/>
+
+                                        <Border Grid.Column="6"
+                                                CornerRadius="6"
+                                                Padding="8,3"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Top">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#7F1D1D"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Success}" Value="True">
+                                                            <Setter Property="Background" Value="#064E3B"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+
+                                            <TextBlock FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="#F9FAFB">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="HIBA"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Success}" Value="True">
+                                                                <Setter Property="Text" Value="OK"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+
+                                        <TextBlock Grid.Column="7"
+                                                   Text="{Binding Details, TargetNullValue=-}"
+                                                   Style="{StaticResource Text.Caption}"
+                                                   Foreground="{DynamicResource Brush.Text.Secondary}"
+                                                   TextWrapping="Wrap"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

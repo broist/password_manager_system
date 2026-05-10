@@ -10,6 +10,7 @@ using PasswordManagerSystem.Client.Services.Dialogs;
 using PasswordManagerSystem.Client.Services.Notifications;
 using PasswordManagerSystem.Client.Services.Session;
 using PasswordManagerSystem.Client.ViewModels.Access;
+using PasswordManagerSystem.Client.ViewModels.Audit;
 using PasswordManagerSystem.Client.ViewModels.Companies;
 using PasswordManagerSystem.Client.ViewModels.Credentials;
 using PasswordManagerSystem.Client.Views;
@@ -78,22 +79,22 @@ public sealed partial class ShellViewModel : ObservableObject
     };
 
     private void BuildNavigation()
-    {
-        NavigationItems.Add(new NavItem("Bejegyzések", "Icon.Key", typeof(CredentialListViewModel)));
-        NavigationItems.Add(new NavItem("Cégek", "Icon.Building", typeof(CompaniesViewModel)));
+	{
+		NavigationItems.Add(new NavItem("Ügyfelek", "Icon.Building", typeof(CompaniesViewModel)));
+		NavigationItems.Add(new NavItem("Bejegyzések", "Icon.Key", typeof(CredentialListViewModel)));
 
-        if (_sessionService.IsItAdmin || _sessionService.IsIt)
-        {
-            NavigationItems.Add(new NavItem("Hozzáférések", "Icon.Shield", typeof(AccessViewModel)));
-        }
+		if (_sessionService.IsItAdmin || _sessionService.IsIt)
+		{
+			NavigationItems.Add(new NavItem("Hozzáférések", "Icon.Shield", typeof(AccessViewModel)));
+		}
 
-        if (_sessionService.IsItAdmin)
-        {
-            NavigationItems.Add(new NavItem("Audit napló", "Icon.Activity", null) { IsPlaceholder = true });
-        }
+		if (_sessionService.IsItAdmin)
+		{
+			NavigationItems.Add(new NavItem("Audit napló", "Icon.Activity", typeof(AuditViewModel)));
+		}
 
-        NavigationItems.Add(new NavItem("Beállítások", "Icon.Settings", null) { IsPlaceholder = true });
-    }
+		NavigationItems.Add(new NavItem("Beállítások", "Icon.Settings", null) { IsPlaceholder = true });
+	}
 
     partial void OnSelectedNavItemChanged(NavItem? value)
     {
