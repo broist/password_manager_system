@@ -9,6 +9,7 @@ public sealed class CredentialListItemResponse
     public string? ConnectionValue { get; set; }
     public string? Notes { get; set; }
     public bool IsActive { get; set; }
+	public bool IsTemporaryAccessForCurrentUser { get; set; }
     public long CreatedByUserId { get; set; }
     public long? UpdatedByUserId { get; set; }
     public DateTime CreatedAt { get; set; }

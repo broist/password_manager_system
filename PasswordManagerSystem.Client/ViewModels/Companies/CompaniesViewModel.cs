@@ -96,6 +96,8 @@ public sealed partial class CompaniesViewModel : ObservableObject
     public bool HasSelectedCompany => SelectedCompany is not null;
 
     public bool IsReadOnlyMode => !IsCreateMode && !IsEditMode;
+	
+	public bool CanManageCompanies => _sessionService.IsItAdmin || _sessionService.IsIt;
 
     public bool CanRestoreCompanies => _sessionService.IsItAdmin;
 
@@ -174,12 +176,13 @@ public sealed partial class CompaniesViewModel : ObservableObject
     }
 
     private bool CanStartCreate()
-    {
-        return !IsLoading &&
-               !IsCreateMode &&
-               !IsEditMode &&
-               !ShowInactiveCompanies;
-    }
+	{
+		return !IsLoading &&
+			   CanManageCompanies &&
+			   !IsCreateMode &&
+			   !IsEditMode &&
+			   !ShowInactiveCompanies;
+	}
 
     [RelayCommand(CanExecute = nameof(CanStartCreate))]
     private void StartCreate()
@@ -266,13 +269,14 @@ public sealed partial class CompaniesViewModel : ObservableObject
     }
 
     private bool CanStartEdit()
-    {
-        return !IsLoading &&
-               !IsCreateMode &&
-               !IsEditMode &&
-               !ShowInactiveCompanies &&
-               SelectedCompany is not null;
-    }
+	{
+		return !IsLoading &&
+			   CanManageCompanies &&
+			   !IsCreateMode &&
+			   !IsEditMode &&
+			   !ShowInactiveCompanies &&
+			   SelectedCompany is not null;
+	}
 
     [RelayCommand(CanExecute = nameof(CanStartEdit))]
     private void StartEdit()
@@ -366,13 +370,14 @@ public sealed partial class CompaniesViewModel : ObservableObject
     }
 
     private bool CanDeactivateCompany()
-    {
-        return !IsLoading &&
-               !IsCreateMode &&
-               !IsEditMode &&
-               !ShowInactiveCompanies &&
-               SelectedCompany is not null;
-    }
+	{
+		return !IsLoading &&
+			   CanManageCompanies &&
+			   !IsCreateMode &&
+			   !IsEditMode &&
+			   !ShowInactiveCompanies &&
+			   SelectedCompany is not null;
+	}
 
     [RelayCommand(CanExecute = nameof(CanDeactivateCompany))]
     private async Task DeactivateCompanyAsync()

@@ -48,11 +48,32 @@ public class CredentialsController : ControllerBase
         }
 
         var allCredentials = await query
-            .OrderBy(x => x.Company.Name)
-            .ThenBy(x => x.Title)
-            .ToListAsync();
+			.OrderBy(x => x.Company.Name)
+			.ThenBy(x => x.Title)
+			.ToListAsync();
 
-        var visibleCredentials = new List<CredentialListItemResponse>();
+		var now = DateTime.UtcNow;
+
+		var credentialIds = allCredentials
+			.Select(x => x.Id)
+			.ToList();
+
+		var temporaryAccessCredentialIds = credentialIds.Count == 0
+			? new HashSet<long>()
+			: (await _dbContext.CredentialAccesses
+				.AsNoTracking()
+				.Where(x =>
+					credentialIds.Contains(x.CredentialId) &&
+					x.UserId == currentUserId &&
+					x.CanView &&
+					x.ExpiresAt != null &&
+					x.ExpiresAt > now)
+				.Select(x => x.CredentialId)
+				.Distinct()
+				.ToListAsync())
+			.ToHashSet();
+
+		var visibleCredentials = new List<CredentialListItemResponse>();
 
         foreach (var credential in allCredentials)
         {
@@ -68,20 +89,21 @@ public class CredentialsController : ControllerBase
             }
 
             visibleCredentials.Add(new CredentialListItemResponse
-            {
-                Id = credential.Id,
-                CompanyId = credential.CompanyId,
-                CompanyName = credential.Company.Name,
-                Title = credential.Title,
-                ConnectionValue = credential.ConnectionValue,
-                Notes = credential.Notes,
-                IsActive = credential.IsActive,
-                CreatedByUserId = credential.CreatedByUserId,
-                UpdatedByUserId = credential.UpdatedByUserId,
-                CreatedAt = credential.CreatedAt,
-                UpdatedAt = credential.UpdatedAt,
-                LastAccessedAt = credential.LastAccessedAt
-            });
+			{
+				Id = credential.Id,
+				CompanyId = credential.CompanyId,
+				CompanyName = credential.Company.Name,
+				Title = credential.Title,
+				ConnectionValue = credential.ConnectionValue,
+				Notes = credential.Notes,
+				IsActive = credential.IsActive,
+				IsTemporaryAccessForCurrentUser = temporaryAccessCredentialIds.Contains(credential.Id),
+				CreatedByUserId = credential.CreatedByUserId,
+				UpdatedByUserId = credential.UpdatedByUserId,
+				CreatedAt = credential.CreatedAt,
+				UpdatedAt = credential.UpdatedAt,
+				LastAccessedAt = credential.LastAccessedAt
+			});
         }
 
         return Ok(visibleCredentials);

@@ -9,6 +9,8 @@
         xmlns:credv="clr-namespace:PasswordManagerSystem.Client.Views.Credentials"
 		xmlns:compvm="clr-namespace:PasswordManagerSystem.Client.ViewModels.Companies"
 		xmlns:compv="clr-namespace:PasswordManagerSystem.Client.Views.Companies"
+		xmlns:accessvm="clr-namespace:PasswordManagerSystem.Client.ViewModels.Access"
+		xmlns:accessv="clr-namespace:PasswordManagerSystem.Client.Views.Access"
         mc:Ignorable="d"
         Title="Password Manager System"
         Width="1320"
@@ -24,6 +26,10 @@
         <DataTemplate DataType="{x:Type credvm:CredentialListViewModel}">
             <credv:CredentialListView/>
         </DataTemplate>
+		
+		<DataTemplate DataType="{x:Type accessvm:AccessViewModel}">
+			<accessv:AccessView/>
+		</DataTemplate>
 		
 		<DataTemplate DataType="{x:Type compvm:CompaniesViewModel}">
 			<compv:CompaniesView/>

@@ -2,6 +2,7 @@ using PasswordManagerSystem.Client.Models.Common;
 using PasswordManagerSystem.Client.Models.PasswordGenerator;
 using PasswordManagerSystem.Client.Models.CredentialAccess;
 using PasswordManagerSystem.Client.Models.Audit;
+using PasswordManagerSystem.Client.Models.Users;
 
 namespace PasswordManagerSystem.Client.Services.Api;
 
@@ -111,4 +112,32 @@ public sealed class AuditApiService : IAuditApiService
 
     public Task<AuditChainVerificationResponse?> VerifyChainAsync(CancellationToken cancellationToken = default)
         => _apiClient.GetAsync<AuditChainVerificationResponse>("api/Audit/verify-chain", cancellationToken);
+}
+
+public interface IUsersApiService
+{
+    Task<IReadOnlyList<ActiveUserResponse>> GetActiveUsersAsync(
+        CancellationToken cancellationToken = default);
+}
+
+public sealed class UsersApiService : IUsersApiService
+{
+    private readonly IApiClient _apiClient;
+
+    public UsersApiService(IApiClient apiClient)
+    {
+        _apiClient = apiClient;
+    }
+
+    public async Task<IReadOnlyList<ActiveUserResponse>> GetActiveUsersAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var list = await _apiClient
+            .GetAsync<List<ActiveUserResponse>>(
+                "api/Users/active",
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        return list ?? new List<ActiveUserResponse>();
+    }
 }

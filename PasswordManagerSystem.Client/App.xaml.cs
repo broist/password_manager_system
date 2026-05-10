@@ -16,6 +16,7 @@ using PasswordManagerSystem.Client.ViewModels;
 using PasswordManagerSystem.Client.ViewModels.Credentials;
 using PasswordManagerSystem.Client.Views;
 using PasswordManagerSystem.Client.ViewModels.Companies;
+using PasswordManagerSystem.Client.ViewModels.Access;
 
 namespace PasswordManagerSystem.Client;
 
@@ -160,9 +161,11 @@ public partial class App : Application
         services.AddSingleton<ICompaniesService, CompaniesService>();
         services.AddSingleton<ICredentialsService, CredentialsService>();
         services.AddSingleton<ICredentialAccessApiService, CredentialAccessApiService>();
+		services.AddTransient<IUsersApiService, UsersApiService>();
         services.AddSingleton<IPasswordGeneratorService, PasswordGeneratorService>();
         services.AddSingleton<IAuditApiService, AuditApiService>();
         services.AddSingleton<IHealthService, HealthService>();
+		
 
         // === Infrastruktúra ===
         services.AddSingleton<ISessionService, SessionService>();
@@ -175,6 +178,7 @@ public partial class App : Application
         services.AddTransient<ShellViewModel>();
         services.AddTransient<CredentialListViewModel>();
 		services.AddTransient<CompaniesViewModel>();
+		services.AddTransient<AccessViewModel>();
 
         services.AddTransient<Func<long, string, CredentialEditorViewModel>>(sp =>
         {

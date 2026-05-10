@@ -47,6 +47,7 @@
 					<Button Style="{StaticResource Button.Primary}"
 							Command="{Binding StartCreateCommand}"
 							Padding="14,8"
+							Visibility="{Binding CanManageCompanies, Converter={StaticResource BoolToVis}}"
 							ToolTip="Új cég létrehozása">
 						<StackPanel Orientation="Horizontal">
 							<Path Data="{StaticResource Icon.Plus}"
@@ -373,47 +374,60 @@
 							  VerticalAlignment="Top">
 
 							<!-- Active company actions -->
-							<StackPanel Orientation="Horizontal"
-										Visibility="{Binding ShowInactiveCompanies, Converter={StaticResource InvBoolToVis}}">
-								<Button Style="{StaticResource Button.Primary}"
-										Command="{Binding StartEditCommand}"
-										Padding="14,8"
-										Margin="0,0,10,0"
-										ToolTip="Cég szerkesztése">
-									<StackPanel Orientation="Horizontal">
-										<Path Data="{StaticResource Icon.Edit}"
-											  Stroke="{DynamicResource Brush.Text.OnAccent}"
-											  StrokeThickness="1.7"
-											  Width="14"
-											  Height="14"
-											  Stretch="Uniform"
-											  VerticalAlignment="Center"/>
-										<TextBlock Text="EDIT"
-												   Margin="8,0,0,0"
-												   VerticalAlignment="Center"
-												   Foreground="{DynamicResource Brush.Text.OnAccent}"/>
-									</StackPanel>
-								</Button>
+						<StackPanel Orientation="Horizontal">
+							<StackPanel.Style>
+								<Style TargetType="StackPanel">
+									<Setter Property="Visibility" Value="Visible"/>
+									<Style.Triggers>
+										<DataTrigger Binding="{Binding ShowInactiveCompanies}" Value="True">
+											<Setter Property="Visibility" Value="Collapsed"/>
+										</DataTrigger>
+										<DataTrigger Binding="{Binding CanManageCompanies}" Value="False">
+											<Setter Property="Visibility" Value="Collapsed"/>
+										</DataTrigger>
+									</Style.Triggers>
+								</Style>
+							</StackPanel.Style>
 
-								<Button Style="{StaticResource Button.Danger}"
-										Command="{Binding DeactivateCompanyCommand}"
-										Padding="14,8"
-										ToolTip="Cég elrejtése">
-									<StackPanel Orientation="Horizontal">
-										<Path Data="{StaticResource Icon.Trash}"
-											  Stroke="White"
-											  StrokeThickness="1.7"
-											  Width="14"
-											  Height="14"
-											  Stretch="Uniform"
-											  VerticalAlignment="Center"/>
-										<TextBlock Text="DELETE"
-												   Margin="8,0,0,0"
-												   VerticalAlignment="Center"
-												   Foreground="White"/>
-									</StackPanel>
-								</Button>
-							</StackPanel>
+							<Button Style="{StaticResource Button.Primary}"
+									Command="{Binding StartEditCommand}"
+									Padding="14,8"
+									Margin="0,0,10,0"
+									ToolTip="Cég szerkesztése">
+								<StackPanel Orientation="Horizontal">
+									<Path Data="{StaticResource Icon.Edit}"
+										  Stroke="{DynamicResource Brush.Text.OnAccent}"
+										  StrokeThickness="1.7"
+										  Width="14"
+										  Height="14"
+										  Stretch="Uniform"
+										  VerticalAlignment="Center"/>
+									<TextBlock Text="EDIT"
+											   Margin="8,0,0,0"
+											   VerticalAlignment="Center"
+											   Foreground="{DynamicResource Brush.Text.OnAccent}"/>
+								</StackPanel>
+							</Button>
+
+							<Button Style="{StaticResource Button.Danger}"
+									Command="{Binding DeactivateCompanyCommand}"
+									Padding="14,8"
+									ToolTip="Cég elrejtése">
+								<StackPanel Orientation="Horizontal">
+									<Path Data="{StaticResource Icon.Trash}"
+										  Stroke="White"
+										  StrokeThickness="1.7"
+										  Width="14"
+										  Height="14"
+										  Stretch="Uniform"
+										  VerticalAlignment="Center"/>
+									<TextBlock Text="DELETE"
+											   Margin="8,0,0,0"
+											   VerticalAlignment="Center"
+											   Foreground="White"/>
+								</StackPanel>
+							</Button>
+						</StackPanel>
 
 							<!-- Inactive company actions -->
 							<Button Style="{StaticResource Button.Primary}"
