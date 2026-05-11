@@ -3,6 +3,7 @@ using PasswordManagerSystem.Client.Models.PasswordGenerator;
 using PasswordManagerSystem.Client.Models.CredentialAccess;
 using PasswordManagerSystem.Client.Models.Audit;
 using PasswordManagerSystem.Client.Models.Users;
+using PasswordManagerSystem.Client.Models.CredentialUsage;
 
 namespace PasswordManagerSystem.Client.Services.Api;
 
@@ -94,6 +95,65 @@ namespace PasswordManagerSystem.Client.Services.Api;
 
 		public Task DeleteAsync(long id, CancellationToken cancellationToken = default)
 			=> _apiClient.DeleteAsync($"api/CredentialAccess/{id}", cancellationToken);
+	}
+	
+	public interface ICredentialUsageApiService
+{
+    Task<IReadOnlyList<ActiveCredentialUsageResponse>> GetActiveAsync(
+        long credentialId,
+        CancellationToken cancellationToken = default);
+
+    Task<StartCredentialUsageResponse?> StartAsync(
+        StartCredentialUsageRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task EndAsync(
+        long usageSessionId,
+        EndCredentialUsageRequest request,
+        CancellationToken cancellationToken = default);
+}
+
+	public sealed class CredentialUsageApiService : ICredentialUsageApiService
+	{
+		private readonly IApiClient _apiClient;
+
+		public CredentialUsageApiService(IApiClient apiClient)
+		{
+			_apiClient = apiClient;
+		}
+
+		public async Task<IReadOnlyList<ActiveCredentialUsageResponse>> GetActiveAsync(
+			long credentialId,
+			CancellationToken cancellationToken = default)
+		{
+			var result = await _apiClient
+				.GetAsync<List<ActiveCredentialUsageResponse>>(
+					$"api/CredentialUsage/active/{credentialId}",
+					cancellationToken)
+				.ConfigureAwait(false);
+
+			return result ?? new List<ActiveCredentialUsageResponse>();
+		}
+
+		public Task<StartCredentialUsageResponse?> StartAsync(
+			StartCredentialUsageRequest request,
+			CancellationToken cancellationToken = default)
+			=> _apiClient.PostAsync<StartCredentialUsageRequest, StartCredentialUsageResponse>(
+				"api/CredentialUsage/start",
+				request,
+				cancellationToken);
+
+		public async Task EndAsync(
+			long usageSessionId,
+			EndCredentialUsageRequest request,
+			CancellationToken cancellationToken = default)
+		{
+			await _apiClient.PostAsync<EndCredentialUsageRequest, object>(
+					$"api/CredentialUsage/end/{usageSessionId}",
+					request,
+					cancellationToken)
+				.ConfigureAwait(false);
+		}
 	}
 
 	public interface IAuditApiService

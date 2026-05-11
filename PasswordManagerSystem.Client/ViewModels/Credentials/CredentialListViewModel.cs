@@ -14,6 +14,7 @@ using PasswordManagerSystem.Client.Services.Clipboard;
 using PasswordManagerSystem.Client.Services.Notifications;
 using PasswordManagerSystem.Client.Services.Session;
 using PasswordManagerSystem.Client.Views.Credentials;
+using PasswordManagerSystem.Client.Models.CredentialUsage;
 
 namespace PasswordManagerSystem.Client.ViewModels.Credentials;
 
@@ -21,6 +22,7 @@ public sealed partial class CredentialListViewModel : ObservableObject
 {
     private readonly ICompaniesService _companiesService;
     private readonly ICredentialsService _credentialsService;
+	private readonly ICredentialUsageApiService _credentialUsageApiService;
     private readonly Func<long, string, CredentialEditorViewModel> _credentialEditorFactory;
     private readonly IClipboardService _clipboardService;
     private readonly IToastService _toastService;
@@ -35,7 +37,8 @@ public sealed partial class CredentialListViewModel : ObservableObject
     public CredentialListViewModel(
         ICompaniesService companiesService,
         ICredentialsService credentialsService,
-        Func<long, string, CredentialEditorViewModel> credentialEditorFactory,
+		ICredentialUsageApiService credentialUsageApiService,
+		Func<long, string, CredentialEditorViewModel> credentialEditorFactory,
         IClipboardService clipboardService,
         IToastService toastService,
         ISessionService sessionService,
@@ -44,7 +47,8 @@ public sealed partial class CredentialListViewModel : ObservableObject
     {
         _companiesService = companiesService;
         _credentialsService = credentialsService;
-        _credentialEditorFactory = credentialEditorFactory;
+		_credentialUsageApiService = credentialUsageApiService;
+		_credentialEditorFactory = credentialEditorFactory;
         _clipboardService = clipboardService;
         _toastService = toastService;
         _sessionService = sessionService;
@@ -707,51 +711,173 @@ public sealed partial class CredentialListViewModel : ObservableObject
     }
 
     [RelayCommand(CanExecute = nameof(HasSelected))]
-    private void OpenConnection()
-    {
-        var connection = SelectedCredential?.ConnectionValue;
+	private async Task OpenConnectionAsync()
+	{
+		if (SelectedCredential is null)
+		{
+			return;
+		}
 
-        if (string.IsNullOrWhiteSpace(connection))
-        {
-            _toastService.ShowInfo("Ehhez a bejegyzéshez nincs kapcsolódási információ.");
-            return;
-        }
+		var credential = SelectedCredential;
+		var connection = credential.ConnectionValue;
 
-        try
-        {
-            if (connection.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                connection.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-            {
-                Process.Start(new ProcessStartInfo(connection)
-                {
-                    UseShellExecute = true
-                });
+		if (string.IsNullOrWhiteSpace(connection))
+		{
+			_toastService.ShowInfo("Ehhez a bejegyzéshez nincs kapcsolódási információ.");
+			return;
+		}
 
-                return;
-            }
+		try
+		{
+			if (!IsRdpConnection(connection))
+			{
+				StartNonTrackedConnection(connection);
+				return;
+			}
 
-            if (connection.StartsWith("\\\\") ||
-                connection.EndsWith(".rdp", StringComparison.OrdinalIgnoreCase))
-            {
-                Process.Start(new ProcessStartInfo(connection)
-                {
-                    UseShellExecute = true
-                });
+			var activeUsages = await _credentialUsageApiService
+				.GetActiveAsync(credential.Id)
+				.ConfigureAwait(true);
 
-                return;
-            }
+			var hasActiveUsage = activeUsages.Count > 0;
 
-            Process.Start(new ProcessStartInfo(connection)
-            {
-                UseShellExecute = true
-            });
-        }
-        catch (Exception ex)
-        {
-            _toastService.ShowError($"Megnyitás sikertelen: {ex.Message}");
-            _logger.LogWarning(ex, "OpenConnection failed for {Value}", connection);
-        }
-    }
+			if (hasActiveUsage && !ConfirmRdpUsageOverride(activeUsages))
+			{
+				return;
+			}
+
+			var process = StartRdpConnection(connection);
+
+			if (process is null)
+			{
+				_toastService.ShowWarning("Az RDP kapcsolat elindult, de a folyamat nem követhető.");
+				return;
+			}
+
+			var startResponse = await _credentialUsageApiService.StartAsync(
+				new StartCredentialUsageRequest
+				{
+					CredentialId = credential.Id,
+					ConnectionValue = connection,
+					ProcessId = process.Id,
+					OverrideActiveUsage = hasActiveUsage
+				}).ConfigureAwait(true);
+
+			if (startResponse is not null)
+			{
+				TrackRdpProcessExit(process, startResponse.Id);
+			}
+		}
+		catch (ApiException ex)
+		{
+			_toastService.ShowError($"Kapcsolódás indítása sikertelen: {ex.Message}");
+			_logger.LogWarning(ex, "Credential usage API failed for credential {CredentialId}", credential.Id);
+		}
+		catch (Exception ex)
+		{
+			_toastService.ShowError($"Megnyitás sikertelen: {ex.Message}");
+			_logger.LogWarning(ex, "OpenConnection failed for {Value}", connection);
+		}
+	}
+	
+	private static bool IsRdpConnection(string connection)
+	{
+		return connection.StartsWith("rdp://", StringComparison.OrdinalIgnoreCase) ||
+			   connection.EndsWith(".rdp", StringComparison.OrdinalIgnoreCase);
+	}
+
+	private static Process? StartRdpConnection(string connection)
+	{
+		if (connection.StartsWith("rdp://", StringComparison.OrdinalIgnoreCase))
+		{
+			var host = connection["rdp://".Length..].Trim().TrimEnd('/');
+
+			if (string.IsNullOrWhiteSpace(host))
+			{
+				throw new InvalidOperationException("Az RDP host üres.");
+			}
+
+			return Process.Start(new ProcessStartInfo
+			{
+				FileName = "mstsc.exe",
+				Arguments = $"/v:{host}",
+				UseShellExecute = false
+			});
+		}
+
+		return Process.Start(new ProcessStartInfo
+		{
+			FileName = "mstsc.exe",
+			Arguments = $"\"{connection}\"",
+			UseShellExecute = false
+		});
+	}
+
+	private static void StartNonTrackedConnection(string connection)
+	{
+		Process.Start(new ProcessStartInfo(connection)
+		{
+			UseShellExecute = true
+		});
+	}
+
+	private bool ConfirmRdpUsageOverride(IReadOnlyList<ActiveCredentialUsageResponse> activeUsages)
+	{
+		var firstUsage = activeUsages
+			.OrderBy(x => x.StartedAt)
+			.First();
+
+		var startedAtLocal = firstUsage.StartedAt.ToLocalTime();
+
+		var owner = Application.Current.Windows
+			.OfType<Window>()
+			.FirstOrDefault(x => x.IsActive)
+			?? Application.Current.MainWindow;
+
+		var result = MessageBox.Show(
+			owner,
+			$"Ezt az RDP kapcsolatot jelenleg használja:\n\n" +
+			$"{firstUsage.AdUsername}\n\n" +
+			$"Indítás ideje: {startedAtLocal:yyyy-MM-dd HH:mm:ss}\n\n" +
+			"Ennek ellenére kapcsolódsz?",
+			"Aktív RDP használat",
+			MessageBoxButton.YesNo,
+			MessageBoxImage.Warning);
+
+		return result == MessageBoxResult.Yes;
+	}
+
+	private void TrackRdpProcessExit(Process process, long usageSessionId)
+	{
+		process.EnableRaisingEvents = true;
+
+		process.Exited += (_, _) =>
+		{
+			_ = Task.Run(async () =>
+			{
+				try
+				{
+					await _credentialUsageApiService.EndAsync(
+						usageSessionId,
+						new EndCredentialUsageRequest
+						{
+							ProcessId = process.Id
+						}).ConfigureAwait(false);
+				}
+				catch (Exception ex)
+				{
+					_logger.LogWarning(
+						ex,
+						"Credential usage end failed for session {UsageSessionId}",
+						usageSessionId);
+				}
+				finally
+				{
+					process.Dispose();
+				}
+			});
+		};
+	}
 
     [RelayCommand]
     private void ToggleHidePassword()
@@ -800,10 +926,12 @@ public sealed partial class CredentialListViewModel : ObservableObject
 	{
 		return NormalizeCredentialType(credentialType) switch
 		{
-			"DATABASE" => "Adatbazis",
+			"DATABASE" => "Adatbázis",
 			"WINDOWS_SERVER" => "Windows szerver",
 			"LINUX_SERVER" => "Linux szerver",
-			_ => "Altalanos"
+			"VPN" => "VPN kapcsolat",
+			"GENERIC" => "Általános",
+			_ => "Általános"
 		};
 	}
 
@@ -814,6 +942,8 @@ public sealed partial class CredentialListViewModel : ObservableObject
 			"DATABASE" => "DB",
 			"WINDOWS_SERVER" => "WIN",
 			"LINUX_SERVER" => "LNX",
+			"VPN" => "VPN",
+			"GENERIC" => "ALT",
 			_ => "ALT"
 		};
 	}
@@ -827,6 +957,7 @@ public sealed partial class CredentialListViewModel : ObservableObject
 			"DATABASE" => "DATABASE",
 			"WINDOWS_SERVER" => "WINDOWS_SERVER",
 			"LINUX_SERVER" => "LINUX_SERVER",
+			"VPN" => "VPN",
 			"GENERIC" => "GENERIC",
 			_ => "GENERIC"
 		};

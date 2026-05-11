@@ -45,11 +45,12 @@ public class CreateCredentialRequestValidator : AbstractValidator<CreateCredenti
     }
 	
 	private static bool BeValidCredentialType(string credentialType)
-{
-    return credentialType is
-        "GENERIC" or
-        "DATABASE" or
-        "WINDOWS_SERVER" or
-        "LINUX_SERVER";
-}
+	{
+		return credentialType is
+			"GENERIC" or
+			"DATABASE" or
+			"WINDOWS_SERVER" or
+			"LINUX_SERVER" or
+			"VPN";
+	}
 }

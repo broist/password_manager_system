@@ -44,6 +44,7 @@ public sealed partial class CredentialEditorViewModel : ObservableObject
 		CredentialTypeOptions.Add(new CredentialTypeOption("DATABASE", "Adatbazis", "DB"));
 		CredentialTypeOptions.Add(new CredentialTypeOption("WINDOWS_SERVER", "Windows szerver", "WIN"));
 		CredentialTypeOptions.Add(new CredentialTypeOption("LINUX_SERVER", "Linux szerver", "LNX"));
+		CredentialTypeOptions.Add(new CredentialTypeOption("VPN", "VPN kapcsolat", "VPN"));
 
 		SelectedCredentialTypeOption = CredentialTypeOptions.FirstOrDefault(x => x.Value == "GENERIC");
 

@@ -633,6 +633,7 @@ public class CredentialsController : ControllerBase
 			"DATABASE" => "DATABASE",
 			"WINDOWS_SERVER" => "WINDOWS_SERVER",
 			"LINUX_SERVER" => "LINUX_SERVER",
+			"VPN" => "VPN",
 			"GENERIC" => "GENERIC",
 			_ => "GENERIC"
 		};

@@ -23,7 +23,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="Cégek"
+                    <TextBlock Text="Ügyfelek"
                                Style="{StaticResource Text.Heading2}"/>
                     <TextBlock Style="{StaticResource Text.Caption}"
                                Margin="0,5,0,0">
@@ -131,10 +131,10 @@
                     </Style>
                 </StackPanel.Style>
 
-                <TextBlock Text="Nincs kiválasztott cég"
+                <TextBlock Text="Nincs kiválasztott ügyfél"
                            Style="{StaticResource Text.Heading3}"
                            HorizontalAlignment="Center"/>
-                <TextBlock Text="Válassz ki egy céget a bal oldali listából, vagy hozz létre újat."
+                <TextBlock Text="Válassz ki egy ügyfelet a bal oldali listából, vagy hozz létre újat."
                            Style="{StaticResource Text.Body}"
                            Foreground="{DynamicResource Brush.Text.Secondary}"
                            TextWrapping="Wrap"
@@ -155,7 +155,7 @@
                         BorderBrush="{DynamicResource Brush.Border.Subtle}"
                         BorderThickness="0,0,0,1">
                     <StackPanel>
-                        <TextBlock Text="Új cég"
+                        <TextBlock Text="Új ügyfél"
                                    Style="{StaticResource Text.Heading2}"/>
 
                         <StackPanel Orientation="Horizontal"
@@ -167,7 +167,7 @@
                                   Height="14"
                                   Stretch="Uniform"
                                   VerticalAlignment="Center"/>
-                            <TextBlock Text="Partnercég létrehozása"
+                            <TextBlock Text="Ügyfél létrehozása"
                                        Style="{StaticResource Text.BodySmall}"
                                        Margin="7,0,0,0"
                                        VerticalAlignment="Center"/>
@@ -178,7 +178,7 @@
                 <StackPanel Grid.Row="1"
                             Margin="30,24,30,24">
 
-                    <TextBlock Text="CÉGNÉV"
+                    <TextBlock Text="ÜGYFÉLNÉV"
                                Style="{StaticResource Text.Caption}"
                                Margin="0,0,0,8"/>
 
@@ -266,7 +266,7 @@
 				<StackPanel Grid.Row="1"
 							Margin="30,24,30,24">
 
-					<TextBlock Text="CÉGNÉV"
+					<TextBlock Text="ÜGYFÉLNÉV"
 							   Style="{StaticResource Text.Caption}"
 							   Margin="0,0,0,8"/>
 

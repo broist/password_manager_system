@@ -380,6 +380,9 @@
                                                                         <DataTrigger Binding="{Binding Credential.CredentialType}" Value="LINUX_SERVER">
                                                                             <Setter Property="Background" Value="#064E3B"/>
                                                                         </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Credential.CredentialType}" Value="VPN">
+                                                                            <Setter Property="Background" Value="#7C2D12"/>
+                                                                        </DataTrigger>
                                                                     </Style.Triggers>
                                                                 </Style>
                                                             </Border.Style>
@@ -407,6 +410,9 @@
                                                                             <DataTrigger Binding="{Binding Credential.CredentialType}" Value="LINUX_SERVER">
                                                                                 <Setter Property="Data" Value="{StaticResource Icon.Terminal}"/>
                                                                             </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding Credential.CredentialType}" Value="VPN">
+                                                                                <Setter Property="Data" Value="{StaticResource Icon.Shield}"/>
+                                                                            </DataTrigger>
                                                                         </Style.Triggers>
                                                                     </Style>
                                                                 </Path.Style>
@@ -433,6 +439,9 @@
                                                                             </DataTrigger>
                                                                             <DataTrigger Binding="{Binding Credential.CredentialType}" Value="LINUX_SERVER">
                                                                                 <Setter Property="Background" Value="#064E3B"/>
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding Credential.CredentialType}" Value="VPN">
+                                                                                <Setter Property="Background" Value="#9A3412"/>
                                                                             </DataTrigger>
                                                                         </Style.Triggers>
                                                                     </Style>

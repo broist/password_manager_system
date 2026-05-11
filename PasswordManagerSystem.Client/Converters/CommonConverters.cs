@@ -73,7 +73,9 @@ public sealed class ConnectionTypeConverter : IValueConverter
             return "URL";
         }
 
-        if (s.StartsWith("\\\\") || s.EndsWith(".rdp", StringComparison.OrdinalIgnoreCase))
+        if (s.StartsWith("rdp://", StringComparison.OrdinalIgnoreCase) ||
+            s.StartsWith("\\\\") ||
+            s.EndsWith(".rdp", StringComparison.OrdinalIgnoreCase))
         {
             return "RDP";
         }
@@ -94,10 +96,10 @@ public sealed class ShortDateTimeConverter : IValueConverter
     {
         if (value is DateTime dt)
         {
-            // Az API UTC-ben küldi vissza; helyi időre konvertáljuk
             var local = dt.Kind == DateTimeKind.Utc ? dt.ToLocalTime() : dt;
             return local.ToString("yyyy-MM-dd HH:mm");
         }
+
         return string.Empty;
     }
 
@@ -134,10 +136,12 @@ public sealed class CredentialTypeDisplayNameConverter : IValueConverter
     {
         return Normalize(value as string) switch
         {
-            "DATABASE" => "Adatbazis",
+            "DATABASE" => "Adatbázis",
             "WINDOWS_SERVER" => "Windows szerver",
             "LINUX_SERVER" => "Linux szerver",
-            _ => "Altalanos"
+            "VPN" => "VPN kapcsolat",
+            "GENERIC" => "Általános",
+            _ => "Általános"
         };
     }
 
@@ -153,6 +157,7 @@ public sealed class CredentialTypeDisplayNameConverter : IValueConverter
             "DATABASE" => "DATABASE",
             "WINDOWS_SERVER" => "WINDOWS_SERVER",
             "LINUX_SERVER" => "LINUX_SERVER",
+            "VPN" => "VPN",
             "GENERIC" => "GENERIC",
             _ => "GENERIC"
         };
@@ -168,6 +173,8 @@ public sealed class CredentialTypeShortNameConverter : IValueConverter
             "DATABASE" => "DB",
             "WINDOWS_SERVER" => "WIN",
             "LINUX_SERVER" => "LNX",
+            "VPN" => "VPN",
+            "GENERIC" => "ALT",
             _ => "ALT"
         };
     }
@@ -184,6 +191,7 @@ public sealed class CredentialTypeShortNameConverter : IValueConverter
             "DATABASE" => "DATABASE",
             "WINDOWS_SERVER" => "WINDOWS_SERVER",
             "LINUX_SERVER" => "LINUX_SERVER",
+            "VPN" => "VPN",
             "GENERIC" => "GENERIC",
             _ => "GENERIC"
         };

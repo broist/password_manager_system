@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PasswordManagerSystem.Api.Domain.Entities;
 
+
 namespace PasswordManagerSystem.Api.Infrastructure.Data;
 
 public class AppDbContext : DbContext
@@ -17,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<CredentialAccess> CredentialAccesses => Set<CredentialAccess>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+	public DbSet<CredentialUsageSession> CredentialUsageSessions => Set<CredentialUsageSession>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -229,5 +231,66 @@ public class AppDbContext : DbContext
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+		
+		modelBuilder.Entity<CredentialUsageSession>(entity =>
+		{
+			entity.ToTable("credential_usage_sessions");
+
+			entity.HasKey(e => e.Id);
+
+			entity.Property(e => e.Id)
+				.HasColumnName("id");
+
+			entity.Property(e => e.CredentialId)
+				.HasColumnName("credential_id")
+				.IsRequired();
+
+			entity.Property(e => e.UserId)
+				.HasColumnName("user_id")
+				.IsRequired();
+
+			entity.Property(e => e.AdUsername)
+				.HasColumnName("ad_username")
+				.HasMaxLength(255)
+				.IsRequired();
+
+			entity.Property(e => e.ConnectionValue)
+				.HasColumnName("connection_value")
+				.HasMaxLength(1000);
+
+			entity.Property(e => e.ProcessId)
+				.HasColumnName("process_id");
+
+			entity.Property(e => e.StartedAt)
+				.HasColumnName("started_at")
+				.IsRequired();
+
+			entity.Property(e => e.EndedAt)
+				.HasColumnName("ended_at");
+
+			entity.Property(e => e.Status)
+				.HasColumnName("status")
+				.HasMaxLength(30)
+				.IsRequired();
+
+			entity.HasIndex(e => new { e.CredentialId, e.Status })
+				.HasDatabaseName("idx_usage_credential_status");
+
+			entity.HasIndex(e => e.UserId)
+				.HasDatabaseName("idx_usage_user_id");
+
+			entity.HasIndex(e => e.StartedAt)
+				.HasDatabaseName("idx_usage_started_at");
+
+			entity.HasOne(e => e.Credential)
+				.WithMany()
+				.HasForeignKey(e => e.CredentialId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			entity.HasOne(e => e.User)
+				.WithMany()
+				.HasForeignKey(e => e.UserId)
+				.OnDelete(DeleteBehavior.Cascade);
+		});
     }
 }

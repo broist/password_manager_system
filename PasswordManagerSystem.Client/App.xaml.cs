@@ -162,6 +162,7 @@ public partial class App : Application
         services.AddSingleton<ICompaniesService, CompaniesService>();
         services.AddSingleton<ICredentialsService, CredentialsService>();
         services.AddSingleton<ICredentialAccessApiService, CredentialAccessApiService>();
+		services.AddSingleton<ICredentialUsageApiService, CredentialUsageApiService>();
         services.AddTransient<IUsersApiService, UsersApiService>();
         services.AddSingleton<IPasswordGeneratorService, PasswordGeneratorService>();
         services.AddSingleton<IAuditApiService, AuditApiService>();

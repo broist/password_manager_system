@@ -576,16 +576,17 @@ public sealed partial class AccessViewModel : ObservableObject
     }
 
     private static int GetCredentialTypeRank(string? credentialType)
-    {
-        return credentialType?.Trim().ToUpperInvariant() switch
-        {
-            "DATABASE" => 1,
-            "WINDOWS_SERVER" => 2,
-            "LINUX_SERVER" => 3,
-            "GENERIC" => 4,
-            _ => 999
-        };
-    }
+	{
+		return credentialType?.Trim().ToUpperInvariant() switch
+		{
+			"DATABASE" => 1,
+			"WINDOWS_SERVER" => 2,
+			"LINUX_SERVER" => 3,
+			"VPN" => 4,
+			"GENERIC" => 5,
+			_ => 999
+		};
+	}
 
     private void HandleApiException(ApiException ex, string messagePrefix)
     {
